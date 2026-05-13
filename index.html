@@ -769,6 +769,7 @@
       saveLogs(logs);
       renderLogs();
       renderStats();
+      if (selectedCalDate) renderCalendar();
     }
 
     // ── Sleep ─────────────────────────────────────────────
@@ -1054,7 +1055,10 @@
         <ul class="log-list" id="dayLogList"></ul>`;
 
       const ul = document.getElementById('dayLogList');
-      dayLogs.forEach(log => ul.appendChild(buildLogItem(log, -1, false)));
+      dayLogs.forEach(log => {
+        const idx = allLogs.findIndex(l => l.timestamp === log.timestamp);
+        ul.appendChild(buildLogItem(log, idx, true));
+      });
     }
 
     // ── Past Record Modal ─────────────────────────────────
