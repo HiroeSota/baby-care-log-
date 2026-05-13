@@ -58,9 +58,9 @@
       opacity: 0.85;
     }
 
-    .btn-nursing  { background: #e76f51; }
-    .btn-diaper   { background: #2a9d8f; }
-    .btn-sleep    { background: #5c7ec4; }
+    .btn-nursing { background: #e76f51; }
+    .btn-diaper  { background: #2a9d8f; }
+    .btn-sleep   { background: #5c7ec4; }
 
     .log-section {
       flex: 1;
@@ -117,6 +117,23 @@
       white-space: nowrap;
     }
 
+    .delete-btn {
+      margin-left: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: #ccc;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.15s;
+      line-height: 1;
+    }
+
+    .delete-btn:hover {
+      color: #e76f51;
+    }
+
     .empty {
       text-align: center;
       color: #bbb;
@@ -137,36 +154,66 @@
 
   <div class="log-section">
     <h2>記録一覧</h2>
-    <ul class="log-list" id="logList">
-      <li class="empty" id="emptyMsg">まだ記録がありません</li>
-    </ul>
+    <ul class="log-list" id="logList"></ul>
   </div>
 
   <script>
+    const STORAGE_KEY = 'baby-care-logs';
+
+    function loadLogs() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveLogs(logs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+    }
+
+    function renderLogs() {
+      const logs = loadLogs();
+      const list = document.getElementById('logList');
+      list.innerHTML = '';
+
+      if (logs.length === 0) {
+        list.innerHTML = '<li class="empty">まだ記録がありません</li>';
+        return;
+      }
+
+      logs.forEach((log, index) => {
+        const li = document.createElement('li');
+        li.className = 'log-item';
+        li.innerHTML = `
+          <span class="log-icon">${log.icon}</span>
+          <span class="log-label">${log.label}</span>
+          <span class="log-time">${log.displayTime}</span>
+          <button class="delete-btn" onclick="deleteLog(${index})" title="削除">✕</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
     function addLog(label, icon) {
       const now = new Date();
-      const time = now.toLocaleTimeString('ja-JP', {
-        month: '2-digit',
-        day:   '2-digit',
-        hour:  '2-digit',
-        minute:'2-digit',
-      });
-      const date = now.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      const displayTime = now.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
+        + ' ' + now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 
-      const list = document.getElementById('logList');
-      const empty = document.getElementById('emptyMsg');
-      if (empty) empty.remove();
-
-      const li = document.createElement('li');
-      li.className = 'log-item';
-      li.innerHTML = `
-        <span class="log-icon">${icon}</span>
-        <span class="log-label">${label}</span>
-        <span class="log-time">${date} ${now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</span>
-      `;
-
-      list.insertBefore(li, list.firstChild);
+      const logs = loadLogs();
+      logs.unshift({ label, icon, displayTime, timestamp: now.toISOString() });
+      saveLogs(logs);
+      renderLogs();
     }
+
+    function deleteLog(index) {
+      const logs = loadLogs();
+      logs.splice(index, 1);
+      saveLogs(logs);
+      renderLogs();
+    }
+
+    renderLogs();
   </script>
 
 </body>
