@@ -1,78 +1,178 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>赤ちゃんケア記録</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    :root {
+      --bg:         #fff8f5;
+      --bg-card:    #ffffff;
+      --header-bg:  linear-gradient(135deg, #ffb5c8 0%, #ffd6a5 100%);
+      --header-txt: #7a4050;
+      --label-txt:  #5a3d4a;
+      --time-txt:   #b09aa5;
+      --border:     #f5e6e0;
+      --shadow:     rgba(200, 140, 160, 0.15);
+      --empty-txt:  #d4bbc2;
+      --delete-c:   #d4bbc2;
+      --delete-h:   #e07090;
+      --section-h:  #c8a8b4;
+      --toggle-bg:  rgba(255,255,255,0.45);
     }
 
+    [data-theme="dark"] {
+      --bg:         #1e2235;
+      --bg-card:    #2a2f48;
+      --header-bg:  linear-gradient(135deg, #3d2a38 0%, #2a3050 100%);
+      --header-txt: #f0c8d8;
+      --label-txt:  #e8d0da;
+      --time-txt:   #8a8fb8;
+      --border:     #353a58;
+      --shadow:     rgba(0, 0, 0, 0.3);
+      --empty-txt:  #555a7a;
+      --delete-c:   #555a7a;
+      --delete-h:   #e07090;
+      --section-h:  #6a6f98;
+      --toggle-bg:  rgba(255,255,255,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
-      background: #fdf6f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Maru Gothic Pro", "Hiragino Sans", sans-serif;
+      background: var(--bg);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      transition: background 0.3s;
     }
 
+    /* ─── Header ─── */
     header {
-      background: #f4a261;
-      color: white;
+      background: var(--header-bg);
+      padding: 22px 20px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .header-inner {
       text-align: center;
-      padding: 20px;
-      font-size: 1.3rem;
+    }
+
+    .header-title {
+      font-size: 1.25rem;
       font-weight: bold;
+      color: var(--header-txt);
+      letter-spacing: 0.08em;
+    }
+
+    .header-sub {
+      font-size: 0.75rem;
+      color: var(--header-txt);
+      opacity: 0.75;
+      margin-top: 2px;
       letter-spacing: 0.05em;
     }
 
+    .theme-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--toggle-bg);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    /* ─── Action Buttons ─── */
     .buttons {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      padding: 28px 24px;
+      gap: 14px;
+      padding: 24px 20px 18px;
     }
 
     .btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      padding: 24px;
+      gap: 14px;
+      padding: 0 24px;
+      height: 90px;
       border: none;
-      border-radius: 16px;
+      border-radius: 22px;
       font-size: 1.5rem;
       font-weight: bold;
       cursor: pointer;
       color: white;
-      transition: transform 0.1s, opacity 0.1s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
+      transition: transform 0.12s, box-shadow 0.12s;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      position: relative;
+      overflow: hidden;
     }
 
-    .btn:active {
-      transform: scale(0.96);
-      opacity: 0.85;
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.12s;
     }
 
-    .btn-nursing { background: #e76f51; }
-    .btn-diaper  { background: #2a9d8f; }
-    .btn-sleep   { background: #5c7ec4; }
+    .btn:active { transform: scale(0.97); }
+    .btn:active::after { opacity: 0.15; }
 
+    .btn-nursing {
+      background: linear-gradient(135deg, #ff8fab 0%, #ffb3c6 100%);
+      box-shadow: 0 6px 20px rgba(255, 100, 140, 0.35);
+    }
+
+    .btn-diaper {
+      background: linear-gradient(135deg, #52c4a0 0%, #7edfc5 100%);
+      box-shadow: 0 6px 20px rgba(60, 180, 140, 0.35);
+    }
+
+    .btn-sleep {
+      background: linear-gradient(135deg, #8b9eff 0%, #b5bfff 100%);
+      box-shadow: 0 6px 20px rgba(100, 120, 255, 0.35);
+    }
+
+    .btn-icon { font-size: 1.9rem; }
+    .btn-label { font-size: 1.45rem; }
+
+    /* ─── Log Section ─── */
     .log-section {
       flex: 1;
-      padding: 0 24px 32px;
+      padding: 0 20px 40px;
     }
 
-    .log-section h2 {
-      font-size: 1rem;
-      color: #888;
-      margin-bottom: 12px;
-      border-bottom: 1px solid #e8ddd5;
-      padding-bottom: 8px;
+    .log-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    .log-header h2 {
+      font-size: 0.85rem;
+      color: var(--section-h);
+      font-weight: bold;
+      letter-spacing: 0.06em;
     }
 
     .log-list {
@@ -86,86 +186,122 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      background: white;
-      border-radius: 12px;
-      padding: 14px 18px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-      animation: fadeIn 0.25s ease;
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 3px 12px var(--shadow);
+      animation: slideIn 0.22s ease;
+      transition: background 0.3s;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-6px); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    .log-icon {
-      font-size: 1.6rem;
-      width: 36px;
-      text-align: center;
+    .log-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-nursing { background: #ff8fab; }
+    .dot-diaper  { background: #52c4a0; }
+    .dot-sleep   { background: #8b9eff; }
+
+    .log-icon { font-size: 1.4rem; }
+
+    .log-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     .log-label {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: bold;
-      color: #333;
+      color: var(--label-txt);
     }
 
     .log-time {
-      margin-left: auto;
-      font-size: 0.95rem;
-      color: #888;
-      white-space: nowrap;
+      font-size: 0.8rem;
+      color: var(--time-txt);
     }
 
     .delete-btn {
-      margin-left: 12px;
+      margin-left: auto;
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 1.1rem;
-      color: #ccc;
-      padding: 4px;
-      border-radius: 6px;
-      transition: color 0.15s;
-      line-height: 1;
+      font-size: 1rem;
+      color: var(--delete-c);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
     }
 
     .delete-btn:hover {
-      color: #e76f51;
+      color: var(--delete-h);
+      background: rgba(224, 112, 144, 0.1);
     }
 
     .empty {
       text-align: center;
-      color: #bbb;
-      margin-top: 24px;
+      color: var(--empty-txt);
+      margin-top: 32px;
       font-size: 0.95rem;
+      line-height: 1.8;
     }
+
+    .empty-icon { font-size: 2.2rem; display: block; margin-bottom: 8px; }
   </style>
 </head>
 <body>
 
-  <header>赤ちゃんケア記録</header>
+  <header>
+    <div class="header-inner">
+      <div class="header-title">🌸 赤ちゃんケア記録</div>
+      <div class="header-sub">育児のきろくをかんたんに</div>
+    </div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="ダークモード切り替え">🌙</button>
+  </header>
 
   <div class="buttons">
-    <button class="btn btn-nursing" onclick="addLog('授乳', '🍼')">🍼 授乳</button>
-    <button class="btn btn-diaper"  onclick="addLog('おむつ', '👶')">👶 おむつ</button>
-    <button class="btn btn-sleep"   onclick="addLog('睡眠', '😴')">😴 睡眠</button>
+    <button class="btn btn-nursing" onclick="addLog('授乳', '🍼', 'nursing')">
+      <span class="btn-icon">🍼</span>
+      <span class="btn-label">授　乳</span>
+    </button>
+    <button class="btn btn-diaper" onclick="addLog('おむつ', '🌿', 'diaper')">
+      <span class="btn-icon">🌿</span>
+      <span class="btn-label">おむつ</span>
+    </button>
+    <button class="btn btn-sleep" onclick="addLog('睡眠', '🌙', 'sleep')">
+      <span class="btn-icon">🌙</span>
+      <span class="btn-label">睡　眠</span>
+    </button>
   </div>
 
   <div class="log-section">
-    <h2>記録一覧</h2>
+    <div class="log-header">
+      <h2>📋 きろく一覧</h2>
+    </div>
     <ul class="log-list" id="logList"></ul>
   </div>
 
   <script>
     const STORAGE_KEY = 'baby-care-logs';
+    const THEME_KEY   = 'baby-care-theme';
+
+    const DOT_CLASS = { nursing: 'dot-nursing', diaper: 'dot-diaper', sleep: 'dot-sleep' };
 
     function loadLogs() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-      } catch {
-        return [];
-      }
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
     }
 
     function saveLogs(logs) {
@@ -178,7 +314,11 @@
       list.innerHTML = '';
 
       if (logs.length === 0) {
-        list.innerHTML = '<li class="empty">まだ記録がありません</li>';
+        list.innerHTML = `
+          <li class="empty">
+            <span class="empty-icon">👶</span>
+            まだ記録がありません<br>ボタンを押して記録しましょう
+          </li>`;
         return;
       }
 
@@ -186,22 +326,27 @@
         const li = document.createElement('li');
         li.className = 'log-item';
         li.innerHTML = `
+          <span class="log-dot ${DOT_CLASS[log.type] || ''}"></span>
           <span class="log-icon">${log.icon}</span>
-          <span class="log-label">${log.label}</span>
-          <span class="log-time">${log.displayTime}</span>
+          <div class="log-info">
+            <span class="log-label">${log.label}</span>
+            <span class="log-time">${log.displayTime}</span>
+          </div>
           <button class="delete-btn" onclick="deleteLog(${index})" title="削除">✕</button>
         `;
         list.appendChild(li);
       });
     }
 
-    function addLog(label, icon) {
+    function addLog(label, icon, type) {
       const now = new Date();
-      const displayTime = now.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
-        + ' ' + now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+      const displayTime =
+        now.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' }) +
+        '　' +
+        now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 
       const logs = loadLogs();
-      logs.unshift({ label, icon, displayTime, timestamp: now.toISOString() });
+      logs.unshift({ label, icon, type, displayTime, timestamp: now.toISOString() });
       saveLogs(logs);
       renderLogs();
     }
@@ -212,6 +357,21 @@
       saveLogs(logs);
       renderLogs();
     }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      const next = isDark ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem(THEME_KEY, next);
+      document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    }
+
+    (function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY) || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('themeToggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+    })();
 
     renderLogs();
   </script>
