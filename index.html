@@ -30,6 +30,11 @@
       --input-border:     #f5e6e0;
       --cancel-bg:        #f5e6e0;
       --cancel-txt:       #b09aa5;
+      --tab-bar-bg:       #ffffff;
+      --tab-active:       #ff8fab;
+      --cal-today-bg:     #ff8fab;
+      --cal-sel-bg:       #fff0ea;
+      --cal-other:        #d4bbc2;
     }
     [data-theme="dark"] {
       --bg:               #1e2235;
@@ -56,6 +61,11 @@
       --input-border:     #353a58;
       --cancel-bg:        #353a58;
       --cancel-txt:       #8a8fb8;
+      --tab-bar-bg:       #252a42;
+      --tab-active:       #ff8fab;
+      --cal-today-bg:     #ff8fab;
+      --cal-sel-bg:       #2f3558;
+      --cal-other:        #555a7a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -72,98 +82,187 @@
     /* ── Header ── */
     header {
       background: var(--header-bg);
-      padding: 22px 20px 18px;
+      padding: 18px 16px 14px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      position: relative;
+      gap: 8px;
     }
-    .header-inner { text-align: center; }
-    .header-title { font-size: 1.25rem; font-weight: bold; color: var(--header-txt); letter-spacing: 0.08em; }
-    .header-sub   { font-size: 0.75rem; color: var(--header-txt); opacity: 0.75; margin-top: 2px; letter-spacing: 0.05em; }
-    .theme-toggle {
-      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    .header-inner { flex: 1; text-align: center; }
+    .header-title { font-size: 1.15rem; font-weight: bold; color: var(--header-txt); letter-spacing: 0.06em; }
+    .header-sub   { font-size: 0.7rem; color: var(--header-txt); opacity: 0.7; margin-top: 1px; }
+    .header-icon-btn {
       background: var(--toggle-bg); border: none; border-radius: 50%;
-      width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
 
-    /* ── Stats ── */
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      background: var(--tab-bar-bg);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .tab-btn {
+      flex: 1; padding: 13px; border: none; background: none;
+      font-size: 0.88rem; font-weight: bold; color: var(--section-h);
+      cursor: pointer; font-family: inherit; letter-spacing: 0.04em;
+      border-bottom: 3px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn.active { color: var(--tab-active); border-bottom-color: var(--tab-active); }
+
+    /* ── Tab content ── */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Stats (record tab) ── */
     .stats-section {
-      margin: 16px 20px 4px; background: var(--bg-stats);
+      margin: 14px 20px 4px; background: var(--bg-stats);
       border-radius: 18px; padding: 14px 16px; transition: background 0.3s;
     }
     .stats-label { font-size: 0.75rem; color: var(--section-h); font-weight: bold; letter-spacing: 0.06em; margin-bottom: 10px; }
     .stats-cards { display: flex; gap: 10px; }
     .stat-card {
-      flex: 1; background: var(--bg-card); border-radius: 12px; padding: 12px 6px;
+      flex: 1; background: var(--bg-card); border-radius: 12px; padding: 10px 6px;
       text-align: center; box-shadow: 0 2px 8px var(--shadow); transition: background 0.3s;
     }
-    .stat-icon  { font-size: 1.2rem; }
-    .stat-value { font-size: 1.25rem; font-weight: bold; color: var(--label-txt); margin-top: 4px; line-height: 1.2; }
-    .stat-unit  { font-size: 0.7rem; color: var(--time-txt); }
-    .stat-name  { font-size: 0.7rem; color: var(--section-h); margin-top: 2px; font-weight: bold; letter-spacing: 0.04em; }
+    .stat-icon  { font-size: 1.1rem; }
+    .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--label-txt); margin-top: 3px; line-height: 1.2; }
+    .stat-unit  { font-size: 0.65rem; color: var(--time-txt); }
+    .stat-name  { font-size: 0.65rem; color: var(--section-h); margin-top: 2px; font-weight: bold; }
 
     /* ── Action Buttons ── */
-    .buttons { display: flex; flex-direction: column; gap: 14px; padding: 18px 20px 14px; }
+    .buttons { display: flex; flex-direction: column; gap: 13px; padding: 16px 20px 12px; }
     .btn {
       display: flex; align-items: center; justify-content: center; gap: 14px;
-      padding: 0 24px; height: 90px; border: none; border-radius: 22px;
+      padding: 0 24px; height: 88px; border: none; border-radius: 22px;
       font-size: 1.5rem; font-weight: bold; cursor: pointer; color: white;
       letter-spacing: 0.06em; transition: transform 0.12s, box-shadow 0.12s;
       text-shadow: 0 1px 3px rgba(0,0,0,0.12); position: relative; overflow: hidden; width: 100%;
     }
-    .btn::after { content: ''; position: absolute; inset: 0; background: white; opacity: 0; transition: opacity 0.12s; }
+    .btn::after { content:''; position:absolute; inset:0; background:white; opacity:0; transition:opacity 0.12s; }
     .btn:active { transform: scale(0.97); }
     .btn:active::after { opacity: 0.15; }
+    .btn-nursing      { background: linear-gradient(135deg,#ff8fab,#ffb3c6); box-shadow: 0 6px 20px rgba(255,100,140,.35); }
+    .btn-diaper       { background: linear-gradient(135deg,#52c4a0,#7edfc5); box-shadow: 0 6px 20px rgba(60,180,140,.35); }
+    .btn-sleep        { background: linear-gradient(135deg,#8b9eff,#b5bfff); box-shadow: 0 6px 20px rgba(100,120,255,.35); }
+    .btn-sleep-active { background: linear-gradient(135deg,#ff9f43,#ffcb77); box-shadow: 0 6px 20px rgba(255,160,60,.4); }
+    .btn-icon  { font-size: 1.85rem; flex-shrink: 0; }
+    .btn-label { font-size: 1.3rem; text-align: left; }
+    .btn-label small { font-size: 0.7rem; font-weight: normal; display: block; opacity: 0.9; margin-top: 2px; }
 
-    .btn-nursing     { background: linear-gradient(135deg,#ff8fab,#ffb3c6); box-shadow: 0 6px 20px rgba(255,100,140,.35); }
-    .btn-diaper      { background: linear-gradient(135deg,#52c4a0,#7edfc5); box-shadow: 0 6px 20px rgba(60,180,140,.35); }
-    .btn-sleep       { background: linear-gradient(135deg,#8b9eff,#b5bfff); box-shadow: 0 6px 20px rgba(100,120,255,.35); }
-    .btn-sleep-active{ background: linear-gradient(135deg,#ff9f43,#ffcb77); box-shadow: 0 6px 20px rgba(255,160,60,.4); }
-
-    .btn-icon  { font-size: 1.9rem; flex-shrink: 0; }
-    .btn-label { font-size: 1.35rem; text-align: left; }
-    .btn-label small { font-size: 0.72rem; font-weight: normal; display: block; opacity: 0.9; margin-top: 2px; }
-
-    /* ── Log Section ── */
-    .log-section { flex: 1; padding: 0 20px 40px; }
-    .log-header {
-      display: flex; align-items: center; margin-bottom: 14px;
-      padding-bottom: 10px; border-bottom: 1.5px solid var(--border);
-    }
+    /* ── Log list (shared by record tab and day detail) ── */
+    .log-section { padding: 0 20px 36px; }
+    .log-header  { display: flex; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1.5px solid var(--border); }
     .log-header h2 { font-size: 0.85rem; color: var(--section-h); font-weight: bold; letter-spacing: 0.06em; }
     .log-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
     .log-item {
       display: flex; align-items: center; gap: 12px; background: var(--bg-card);
-      border-radius: 16px; padding: 14px 16px; box-shadow: 0 3px 12px var(--shadow);
+      border-radius: 16px; padding: 13px 15px; box-shadow: 0 3px 12px var(--shadow);
       animation: slideIn 0.22s ease; transition: background 0.3s;
     }
+    #dayDetail .log-item { animation: none; }
     @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-
-    .log-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .dot-nursing    { background: #ff8fab; }
-    .dot-pee        { background: #52c4a0; }
-    .dot-poop       { background: #d4a843; }
-    .dot-sleep      { background: #8b9eff; }
-    .dot-sleep-end  { background: #ff9f43; }
-
-    .log-icon { font-size: 1.35rem; flex-shrink: 0; }
+    .log-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .dot-nursing   { background: #ff8fab; }
+    .dot-pee       { background: #52c4a0; }
+    .dot-poop      { background: #d4a843; }
+    .dot-sleep     { background: #8b9eff; }
+    .dot-sleep-end { background: #ff9f43; }
+    .log-icon { font-size: 1.3rem; flex-shrink: 0; }
     .log-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-    .log-label{ font-size: 0.95rem; font-weight: bold; color: var(--label-txt); }
-    .log-sub  { font-size: 0.78rem; color: var(--sub-txt); font-weight: bold; }
-    .log-time { font-size: 0.75rem; color: var(--time-txt); }
-
+    .log-label{ font-size: 0.92rem; font-weight: bold; color: var(--label-txt); }
+    .log-sub  { font-size: 0.75rem; color: var(--sub-txt); font-weight: bold; }
+    .log-time { font-size: 0.72rem; color: var(--time-txt); }
     .delete-btn {
-      background: none; border: none; cursor: pointer; font-size: 0.95rem;
-      color: var(--delete-c); width: 30px; height: 30px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer; font-size: 0.9rem; color: var(--delete-c);
+      width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
       transition: color 0.15s, background 0.15s; flex-shrink: 0;
     }
     .delete-btn:hover { color: var(--delete-h); background: rgba(224,112,144,0.1); }
+    .empty { text-align: center; color: var(--empty-txt); margin-top: 28px; font-size: 0.92rem; line-height: 1.8; }
+    .empty-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
 
-    .empty { text-align: center; color: var(--empty-txt); margin-top: 32px; font-size: 0.95rem; line-height: 1.8; }
-    .empty-icon { font-size: 2.2rem; display: block; margin-bottom: 8px; }
+    /* ── Calendar tab ── */
+    .calendar-section { padding: 16px 20px 40px; }
+
+    .cal-nav {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;
+    }
+    .cal-nav-btn {
+      background: var(--bg-card); border: none; border-radius: 50%; width: 38px; height: 38px;
+      font-size: 1.3rem; cursor: pointer; color: var(--label-txt);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px var(--shadow); transition: background 0.15s;
+    }
+    .cal-nav-btn:active { background: var(--option-sel); }
+    .cal-month-label { font-size: 1.05rem; font-weight: bold; color: var(--label-txt); }
+
+    .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+    .cal-wd {
+      text-align: center; font-size: 0.7rem; font-weight: bold;
+      color: var(--section-h); padding: 4px 0;
+    }
+    .cal-wd:nth-child(1) { color: #e07090; }
+    .cal-wd:nth-child(7) { color: #6080cc; }
+
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 20px; }
+
+    .cal-day {
+      display: flex; flex-direction: column; align-items: center; padding: 5px 2px 4px;
+      border-radius: 10px; cursor: pointer; min-height: 48px;
+      transition: background 0.15s; gap: 2px;
+    }
+    .cal-day.other-month { cursor: default; opacity: 0.35; }
+    .cal-day.selected    { background: var(--cal-sel-bg); }
+
+    .cal-day-inner {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cal-day.today .cal-day-inner { background: var(--cal-today-bg); }
+
+    .cal-day-num {
+      font-size: 0.84rem; font-weight: bold; color: var(--label-txt); line-height: 1;
+    }
+    .cal-day.today .cal-day-num { color: white; }
+    .cal-day.other-month .cal-day-num { color: var(--cal-other); }
+
+    .cal-dots { display: flex; gap: 2px; min-height: 6px; }
+    .cal-dot  { width: 5px; height: 5px; border-radius: 50%; }
+    .cal-dot-n { background: #ff8fab; }
+    .cal-dot-d { background: #52c4a0; }
+    .cal-dot-s { background: #8b9eff; }
+
+    /* ── Day detail ── */
+    #dayDetail { animation: fadeIn 0.22s ease; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    .day-detail-title {
+      font-size: 0.92rem; font-weight: bold; color: var(--label-txt);
+      margin-bottom: 12px; letter-spacing: 0.03em;
+    }
+    .day-stats { display: flex; gap: 8px; margin-bottom: 16px; }
+    .day-stat-card {
+      flex: 1; background: var(--bg-card); border-radius: 12px; padding: 10px 6px;
+      text-align: center; box-shadow: 0 2px 8px var(--shadow); transition: background 0.3s;
+    }
+    .day-stat-val  { font-size: 1.1rem; font-weight: bold; color: var(--label-txt); margin-top: 3px; }
+    .day-stat-unit { font-size: 0.62rem; color: var(--time-txt); }
+    .day-stat-name { font-size: 0.62rem; color: var(--section-h); margin-top: 1px; font-weight: bold; }
+
+    .day-no-log {
+      text-align: center; color: var(--empty-txt); padding: 24px 0;
+      font-size: 0.9rem; line-height: 1.8;
+    }
+    .cal-placeholder {
+      text-align: center; color: var(--empty-txt); padding: 20px 0;
+      font-size: 0.88rem; line-height: 1.8;
+    }
 
     /* ── Modal shared ── */
     .modal-backdrop {
@@ -178,13 +277,12 @@
     }
     @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
     .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
-    .modal-title  { text-align: center; font-size: 1.05rem; font-weight: bold; color: var(--label-txt); margin-bottom: 18px; letter-spacing: 0.04em; }
+    .modal-title  { text-align: center; font-size: 1.05rem; font-weight: bold; color: var(--label-txt); margin-bottom: 18px; }
     .modal-sub-label { font-size: 0.8rem; color: var(--section-h); font-weight: bold; margin-bottom: 8px; letter-spacing: 0.04em; }
 
-    /* ── Option buttons (large — for type selection) ── */
-    .opt-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    /* Option buttons */
+    .opt-grid-2    { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
     .opt-grid-full { margin-bottom: 14px; }
-
     .opt-btn {
       background: var(--option-bg); border: 2px solid var(--option-border);
       border-radius: 16px; padding: 18px 12px; cursor: pointer; text-align: center;
@@ -196,7 +294,7 @@
     .opt-btn.selected   { background: var(--option-sel); border-color: var(--option-sel-border); }
     .opt-btn:active     { transform: scale(0.97); }
 
-    /* ── Condition buttons (smaller — 2×2 grid) ── */
+    /* Condition buttons */
     .cond-section { margin-bottom: 14px; animation: fadeIn 0.2s ease; }
     .cond-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .cond-btn {
@@ -210,7 +308,7 @@
     .cond-btn.selected   { background: var(--option-sel); border-color: var(--option-sel-border); }
     .cond-btn:active     { transform: scale(0.97); }
 
-    /* ── Text inputs (shared by all modals) ── */
+    /* Text inputs */
     .text-input-section { margin-bottom: 14px; }
     .text-input {
       width: 100%; padding: 14px 18px; border-radius: 14px;
@@ -220,9 +318,7 @@
     }
     .text-input:focus { border-color: var(--option-sel-border); }
 
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-    /* ── Modal action row ── */
+    /* Modal actions */
     .modal-actions { display: flex; gap: 12px; }
     .btn-cancel {
       flex: 1; padding: 16px; background: var(--cancel-bg); color: var(--cancel-txt);
@@ -236,73 +332,98 @@
       box-shadow: 0 4px 12px rgba(255,100,140,.3); transition: opacity 0.15s;
     }
     .btn-confirm:disabled    { opacity: 0.4; box-shadow: none; cursor: default; }
-    .btn-cancel:active,
-    .btn-confirm:not(:disabled):active { opacity: 0.8; }
+    .btn-cancel:active, .btn-confirm:not(:disabled):active { opacity: 0.8; }
   </style>
 </head>
 <body>
 
+  <!-- ── Header ── -->
   <header>
+    <button class="header-icon-btn" onclick="openNameModal()" title="名前を変更">✏️</button>
     <div class="header-inner">
-      <div class="header-title">🌸 赤ちゃんケア記録</div>
+      <div class="header-title">🌸 <span id="headerName">赤ちゃん</span>のきろく</div>
       <div class="header-sub">育児のきろくをかんたんに</div>
     </div>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
+    <button class="header-icon-btn" id="themeToggle" onclick="toggleTheme()">🌙</button>
   </header>
 
-  <!-- Stats -->
-  <div class="stats-section">
-    <div class="stats-label">📊 今日のきろく</div>
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-icon">🍼</div>
-        <div class="stat-value" id="statNursing">0</div>
-        <div class="stat-unit">回</div>
-        <div class="stat-name">授乳</div>
+  <!-- ── Tab bar ── -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="record"   onclick="switchTab('record')">📝 記録</button>
+    <button class="tab-btn"        data-tab="calendar" onclick="switchTab('calendar')">📅 カレンダー</button>
+  </div>
+
+  <!-- ── Tab: Record ── -->
+  <div id="tab-record" class="tab-content active">
+    <div class="stats-section">
+      <div class="stats-label">📊 今日のきろく</div>
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-icon">🍼</div>
+          <div class="stat-value" id="statNursing">0</div>
+          <div class="stat-unit">回</div>
+          <div class="stat-name">授乳</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🌿</div>
+          <div class="stat-value" id="statDiaper">0</div>
+          <div class="stat-unit">回</div>
+          <div class="stat-name">おむつ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🌙</div>
+          <div class="stat-value" id="statSleep">—</div>
+          <div class="stat-unit" id="statSleepUnit"></div>
+          <div class="stat-name">合計睡眠</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">🌿</div>
-        <div class="stat-value" id="statDiaper">0</div>
-        <div class="stat-unit">回</div>
-        <div class="stat-name">おむつ</div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn btn-nursing" onclick="openNursingModal()">
+        <span class="btn-icon">🍼</span><span class="btn-label">授　乳</span>
+      </button>
+      <button class="btn btn-diaper" onclick="openDiaperModal()">
+        <span class="btn-icon">🌿</span><span class="btn-label">おむつ</span>
+      </button>
+      <button class="btn btn-sleep" id="btnSleep" onclick="handleSleep()">
+        <span class="btn-icon" id="sleepIcon">🌙</span>
+        <span class="btn-label" id="sleepLabel">ねんね開始</span>
+      </button>
+    </div>
+
+    <div class="log-section">
+      <div class="log-header"><h2>📋 きろく一覧</h2></div>
+      <ul class="log-list" id="logList"></ul>
+    </div>
+  </div>
+
+  <!-- ── Tab: Calendar ── -->
+  <div id="tab-calendar" class="tab-content">
+    <div class="calendar-section">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="prevMonth()">‹</button>
+        <span class="cal-month-label" id="calMonthLabel"></span>
+        <button class="cal-nav-btn" onclick="nextMonth()">›</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">🌙</div>
-        <div class="stat-value" id="statSleep">—</div>
-        <div class="stat-unit" id="statSleepUnit"></div>
-        <div class="stat-name">合計睡眠</div>
+      <div class="cal-weekdays">
+        <div class="cal-wd">日</div><div class="cal-wd">月</div><div class="cal-wd">火</div>
+        <div class="cal-wd">水</div><div class="cal-wd">木</div><div class="cal-wd">金</div>
+        <div class="cal-wd">土</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+
+      <div id="dayDetail">
+        <div class="cal-placeholder">📅 日付をタップするときろくを確認できます</div>
       </div>
     </div>
   </div>
 
-  <!-- Buttons -->
-  <div class="buttons">
-    <button class="btn btn-nursing" onclick="openNursingModal()">
-      <span class="btn-icon">🍼</span>
-      <span class="btn-label">授　乳</span>
-    </button>
-    <button class="btn btn-diaper" onclick="openDiaperModal()">
-      <span class="btn-icon">🌿</span>
-      <span class="btn-label">おむつ</span>
-    </button>
-    <button class="btn btn-sleep" id="btnSleep" onclick="handleSleep()">
-      <span class="btn-icon" id="sleepIcon">🌙</span>
-      <span class="btn-label" id="sleepLabel">ねんね開始</span>
-    </button>
-  </div>
-
-  <!-- Log -->
-  <div class="log-section">
-    <div class="log-header"><h2>📋 きろく一覧</h2></div>
-    <ul class="log-list" id="logList"></ul>
-  </div>
-
-  <!-- ── Nursing Modal ── -->
+  <!-- ── Modal: Nursing ── -->
   <div class="modal-backdrop" id="nursingModal" onclick="if(event.target===this)closeNursingModal()">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-title">授乳の種類を選んでね</div>
-
       <div class="opt-grid-2">
         <button class="opt-btn" id="nopt-right" onclick="selectNursingType('right')">
           <span class="opt-icon">🤱</span><span class="opt-label">右おっぱい</span>
@@ -316,12 +437,10 @@
           <span class="opt-icon">🍶</span><span class="opt-label">ミルク</span>
         </button>
       </div>
-
       <div class="text-input-section" id="milkAmountSection" style="display:none">
         <div class="modal-sub-label">量（任意）</div>
         <input class="text-input" type="number" id="milkAmount" inputmode="numeric" min="0" step="1" placeholder="例：120 ml">
       </div>
-
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeNursingModal()">キャンセル</button>
         <button class="btn-confirm" id="btnNursingConfirm" onclick="confirmNursing()" disabled>記録する ✓</button>
@@ -329,12 +448,11 @@
     </div>
   </div>
 
-  <!-- ── Diaper Modal ── -->
+  <!-- ── Modal: Diaper ── -->
   <div class="modal-backdrop" id="diaperModal" onclick="if(event.target===this)closeDiaperModal()">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-title">おむつの種類を選んでね</div>
-
       <div class="opt-grid-2">
         <button class="opt-btn" id="dopt-pee" onclick="selectDiaperType('pee')">
           <span class="opt-icon">💧</span><span class="opt-label">おしっこ</span>
@@ -343,8 +461,6 @@
           <span class="opt-icon">💩</span><span class="opt-label">うんち</span>
         </button>
       </div>
-
-      <!-- うんちの状態（うんち選択時のみ表示） -->
       <div class="cond-section" id="condSection" style="display:none">
         <div class="modal-sub-label">うんちの状態（任意）</div>
         <div class="cond-grid">
@@ -362,16 +478,30 @@
           </button>
         </div>
       </div>
-
-      <!-- メモ -->
       <div class="text-input-section">
         <div class="modal-sub-label">メモ（任意）</div>
         <input class="text-input" type="text" id="diaperMemo" placeholder="例：少し緑っぽかった" maxlength="60">
       </div>
-
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeDiaperModal()">キャンセル</button>
         <button class="btn-confirm" id="btnDiaperConfirm" onclick="confirmDiaper()" disabled>記録する ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Baby Name ── -->
+  <div class="modal-backdrop" id="nameModal" onclick="if(event.target===this)closeNameModal()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">赤ちゃんの名前を入力してね</div>
+      <div class="text-input-section">
+        <input class="text-input" type="text" id="babyNameInput"
+               placeholder="例：はな" maxlength="20"
+               onkeydown="if(event.key==='Enter')saveBabyName()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeNameModal()">キャンセル</button>
+        <button class="btn-confirm" onclick="saveBabyName()">保存する ✓</button>
       </div>
     </div>
   </div>
@@ -380,12 +510,16 @@
     const STORAGE_KEY      = 'baby-care-logs';
     const THEME_KEY        = 'baby-care-theme';
     const ACTIVE_SLEEP_KEY = 'baby-care-active-sleep';
+    const NAME_KEY         = 'baby-care-name';
 
     let sleepTimer          = null;
     let selectedNursingType = null;
     let selectedDiaperType  = null;
     let selectedCondId      = null;
     let selectedCondText    = null;
+    let calYear             = new Date().getFullYear();
+    let calMonth            = new Date().getMonth();
+    let selectedCalEl       = null;
 
     // ── Storage ──────────────────────────────────────────
     function loadLogs() {
@@ -398,10 +532,15 @@
       try { return JSON.parse(localStorage.getItem(ACTIVE_SLEEP_KEY)); }
       catch { return null; }
     }
-    function setActiveSleep(data) {
-      data === null
-        ? localStorage.removeItem(ACTIVE_SLEEP_KEY)
-        : localStorage.setItem(ACTIVE_SLEEP_KEY, JSON.stringify(data));
+    function setActiveSleep(d) {
+      d === null ? localStorage.removeItem(ACTIVE_SLEEP_KEY)
+                 : localStorage.setItem(ACTIVE_SLEEP_KEY, JSON.stringify(d));
+    }
+
+    function getBabyName() { return localStorage.getItem(NAME_KEY) || ''; }
+    function updateHeaderName() {
+      const name = getBabyName() || '赤ちゃん';
+      document.getElementById('headerName').textContent = name;
     }
 
     // ── Helpers ───────────────────────────────────────────
@@ -426,53 +565,62 @@
       return m > 0 ? `${h}時間${m}分` : `${h}時間`;
     }
 
-    // ── Render: logs ──────────────────────────────────────
+    function dateKey(d) {
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }
+
+    // ── Tabs ──────────────────────────────────────────────
+    function switchTab(name) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(`tab-${name}`).classList.add('active');
+      document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+      if (name === 'calendar') renderCalendar();
+    }
+
+    // ── Render: log items (shared renderer) ──────────────
+    function buildLogItem(log, index, withDelete) {
+      let dotClass = 'dot-nursing';
+      if      (log.type === 'diaper' && log.subtype === 'pee')   dotClass = 'dot-pee';
+      else if (log.type === 'diaper' && log.subtype === 'poop')  dotClass = 'dot-poop';
+      else if (log.type === 'sleep'  && log.subtype === 'start') dotClass = 'dot-sleep';
+      else if (log.type === 'sleep'  && log.subtype === 'end')   dotClass = 'dot-sleep-end';
+
+      const subParts = [];
+      if (log.type === 'sleep' && log.subtype === 'end' && log.duration != null)
+        subParts.push(`🛏 ${fmtLong(log.duration)}のおやすみ`);
+      if (log.type === 'diaper' && log.conditionText) subParts.push(log.conditionText);
+      if (log.memo) subParts.push(`📝 ${log.memo}`);
+      const subHtml = subParts.length
+        ? `<span class="log-sub">${subParts.join('　·　')}</span>` : '';
+
+      const deleteBtn = withDelete
+        ? `<button class="delete-btn" onclick="deleteLog(${index})" title="削除">✕</button>` : '';
+
+      const li = document.createElement('li');
+      li.className = 'log-item';
+      li.innerHTML = `
+        <span class="log-dot ${dotClass}"></span>
+        <span class="log-icon">${log.icon}</span>
+        <div class="log-info">
+          <span class="log-label">${log.label}</span>
+          ${subHtml}
+          <span class="log-time">${log.displayTime}</span>
+        </div>
+        ${deleteBtn}`;
+      return li;
+    }
+
+    // ── Render: record tab log list ───────────────────────
     function renderLogs() {
       const logs = loadLogs();
       const list = document.getElementById('logList');
       list.innerHTML = '';
-
       if (logs.length === 0) {
         list.innerHTML = `<li class="empty"><span class="empty-icon">👶</span>まだ記録がありません<br>ボタンを押して記録しましょう</li>`;
         return;
       }
-
-      logs.forEach((log, i) => {
-        // dot color
-        let dotClass = 'dot-nursing';
-        if      (log.type === 'diaper' && log.subtype === 'pee')    dotClass = 'dot-pee';
-        else if (log.type === 'diaper' && log.subtype === 'poop')   dotClass = 'dot-poop';
-        else if (log.type === 'sleep'  && log.subtype === 'start')  dotClass = 'dot-sleep';
-        else if (log.type === 'sleep'  && log.subtype === 'end')    dotClass = 'dot-sleep-end';
-
-        // sub-label
-        let subParts = [];
-        if (log.type === 'sleep' && log.subtype === 'end' && log.duration != null) {
-          subParts.push(`🛏 ${fmtLong(log.duration)}のおやすみ`);
-        }
-        if (log.type === 'diaper' && log.conditionText) {
-          subParts.push(log.conditionText);
-        }
-        if (log.memo) {
-          subParts.push(`📝 ${log.memo}`);
-        }
-        const subHtml = subParts.length
-          ? `<span class="log-sub">${subParts.join('　·　')}</span>`
-          : '';
-
-        const li = document.createElement('li');
-        li.className = 'log-item';
-        li.innerHTML = `
-          <span class="log-dot ${dotClass}"></span>
-          <span class="log-icon">${log.icon}</span>
-          <div class="log-info">
-            <span class="log-label">${log.label}</span>
-            ${subHtml}
-            <span class="log-time">${log.displayTime}</span>
-          </div>
-          <button class="delete-btn" onclick="deleteLog(${i})" title="削除">✕</button>`;
-        list.appendChild(li);
-      });
+      logs.forEach((log, i) => list.appendChild(buildLogItem(log, i, true)));
     }
 
     // ── Render: stats ─────────────────────────────────────
@@ -484,9 +632,8 @@
       document.getElementById('statNursing').textContent = tl.filter(l => l.type === 'nursing').length;
       document.getElementById('statDiaper').textContent  = tl.filter(l => l.type === 'diaper').length;
 
-      const totalMin = tl
-        .filter(l => l.type === 'sleep' && l.subtype === 'end')
-        .reduce((s, l) => s + (l.duration || 0), 0);
+      const totalMin = tl.filter(l => l.type === 'sleep' && l.subtype === 'end')
+                         .reduce((s, l) => s + (l.duration || 0), 0);
       const [val, unit] = fmtShort(totalMin);
       document.getElementById('statSleep').textContent    = val;
       document.getElementById('statSleepUnit').textContent = unit;
@@ -549,7 +696,6 @@
       document.getElementById('nursingModal').classList.add('open');
     }
     function closeNursingModal() { document.getElementById('nursingModal').classList.remove('open'); }
-
     function selectNursingType(type) {
       selectedNursingType = type;
       document.querySelectorAll('[id^="nopt-"]').forEach(b => b.classList.remove('selected'));
@@ -557,21 +703,18 @@
       document.getElementById('milkAmountSection').style.display = type === 'milk' ? 'block' : 'none';
       document.getElementById('btnNursingConfirm').disabled = false;
     }
-
     function confirmNursing() {
       if (!selectedNursingType) return;
       let label, icon = '🍼';
-      if (selectedNursingType === 'right') {
-        label = '授乳 — 右おっぱい';
-      } else if (selectedNursingType === 'left') {
-        label = '授乳 — 左おっぱい';
-      } else {
+      if (selectedNursingType === 'right') { label = '授乳 — 右おっぱい'; }
+      else if (selectedNursingType === 'left') { label = '授乳 — 左おっぱい'; }
+      else {
         icon = '🍶';
         const ml = parseInt(document.getElementById('milkAmount').value, 10);
         label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
       }
       const logs = loadLogs();
-      logs.unshift({ type:'nursing', subtype: selectedNursingType, label, icon,
+      logs.unshift({ type:'nursing', subtype:selectedNursingType, label, icon,
                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
       saveLogs(logs);
       closeNursingModal(); renderLogs(); renderStats();
@@ -579,9 +722,7 @@
 
     // ── Diaper Modal ──────────────────────────────────────
     function openDiaperModal() {
-      selectedDiaperType = null;
-      selectedCondId     = null;
-      selectedCondText   = null;
+      selectedDiaperType = null; selectedCondId = null; selectedCondText = null;
       document.querySelectorAll('[id^="dopt-"]').forEach(b => b.classList.remove('selected'));
       document.querySelectorAll('[id^="cond-"]').forEach(b => b.classList.remove('selected'));
       document.getElementById('condSection').style.display = 'none';
@@ -590,42 +731,188 @@
       document.getElementById('diaperModal').classList.add('open');
     }
     function closeDiaperModal() { document.getElementById('diaperModal').classList.remove('open'); }
-
     function selectDiaperType(type) {
-      selectedDiaperType = type;
-      selectedCondId     = null;
-      selectedCondText   = null;
+      selectedDiaperType = type; selectedCondId = null; selectedCondText = null;
       document.querySelectorAll('[id^="dopt-"]').forEach(b => b.classList.remove('selected'));
       document.getElementById(`dopt-${type}`).classList.add('selected');
       document.querySelectorAll('[id^="cond-"]').forEach(b => b.classList.remove('selected'));
       document.getElementById('condSection').style.display = type === 'poop' ? 'block' : 'none';
       document.getElementById('btnDiaperConfirm').disabled = false;
     }
-
     function selectCondition(id, icon, label) {
-      selectedCondId   = id;
-      selectedCondText = `${icon} ${label}`;
+      selectedCondId = id; selectedCondText = `${icon} ${label}`;
       document.querySelectorAll('[id^="cond-"]').forEach(b => b.classList.remove('selected'));
       document.getElementById(`cond-${id}`).classList.add('selected');
     }
-
     function confirmDiaper() {
       if (!selectedDiaperType) return;
       const isPee = selectedDiaperType === 'pee';
       const memo  = document.getElementById('diaperMemo').value.trim() || null;
       const logs  = loadLogs();
-      logs.unshift({
-        type: 'diaper',
-        subtype: selectedDiaperType,
-        conditionText: selectedCondText,
-        memo,
-        label: isPee ? 'おしっこ' : 'うんち',
-        icon:  isPee ? '💧' : '💩',
-        displayTime: nowDisplayTime(),
-        timestamp: new Date().toISOString()
-      });
+      logs.unshift({ type:'diaper', subtype:selectedDiaperType,
+                     conditionText: selectedCondText, memo,
+                     label: isPee ? 'おしっこ' : 'うんち',
+                     icon:  isPee ? '💧' : '💩',
+                     displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
       saveLogs(logs);
       closeDiaperModal(); renderLogs(); renderStats();
+    }
+
+    // ── Baby Name Modal ───────────────────────────────────
+    function openNameModal() {
+      document.getElementById('babyNameInput').value = getBabyName();
+      document.getElementById('nameModal').classList.add('open');
+      setTimeout(() => document.getElementById('babyNameInput').focus(), 300);
+    }
+    function closeNameModal() { document.getElementById('nameModal').classList.remove('open'); }
+    function saveBabyName() {
+      const name = document.getElementById('babyNameInput').value.trim();
+      if (name) localStorage.setItem(NAME_KEY, name);
+      else localStorage.removeItem(NAME_KEY);
+      updateHeaderName();
+      closeNameModal();
+    }
+
+    // ── Calendar ──────────────────────────────────────────
+    function prevMonth() {
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      selectedCalEl = null;
+      renderCalendar();
+    }
+    function nextMonth() {
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      selectedCalEl = null;
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      document.getElementById('calMonthLabel').textContent =
+        `${calYear}年${calMonth + 1}月`;
+
+      // Build logs map: dateKey → {n, d, s}
+      const logsMap = {};
+      loadLogs().forEach(log => {
+        const k = dateKey(new Date(log.timestamp));
+        if (!logsMap[k]) logsMap[k] = { n:false, d:false, s:false };
+        if (log.type === 'nursing') logsMap[k].n = true;
+        if (log.type === 'diaper')  logsMap[k].d = true;
+        if (log.type === 'sleep')   logsMap[k].s = true;
+      });
+
+      const firstDow   = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+      const daysInMon  = new Date(calYear, calMonth + 1, 0).getDate();
+      const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+      const today      = new Date();
+
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+
+      // Prev month spill
+      for (let i = firstDow - 1; i >= 0; i--) {
+        grid.appendChild(makeDayCell(daysInPrev - i, calYear, calMonth - 1, true, logsMap, today));
+      }
+      // Current month
+      for (let d = 1; d <= daysInMon; d++) {
+        grid.appendChild(makeDayCell(d, calYear, calMonth, false, logsMap, today));
+      }
+      // Next month spill
+      const total = Math.ceil((firstDow + daysInMon) / 7) * 7;
+      for (let d = 1; d <= total - firstDow - daysInMon; d++) {
+        grid.appendChild(makeDayCell(d, calYear, calMonth + 1, true, logsMap, today));
+      }
+
+      // Reset detail if no selection
+      if (!selectedCalEl) {
+        document.getElementById('dayDetail').innerHTML =
+          '<div class="cal-placeholder">📅 日付をタップするときろくを確認できます</div>';
+      }
+    }
+
+    function makeDayCell(day, year, month, isOther, logsMap, today) {
+      const date = new Date(year, month, day);
+      const k    = dateKey(date);
+      const info = logsMap[k] || { n:false, d:false, s:false };
+      const isToday = date.toDateString() === today.toDateString();
+
+      const el = document.createElement('div');
+      el.className = 'cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '');
+
+      el.innerHTML = `
+        <div class="cal-day-inner"><span class="cal-day-num">${date.getDate()}</span></div>
+        <div class="cal-dots">
+          ${info.n ? '<span class="cal-dot cal-dot-n"></span>' : ''}
+          ${info.d ? '<span class="cal-dot cal-dot-d"></span>' : ''}
+          ${info.s ? '<span class="cal-dot cal-dot-s"></span>' : ''}
+        </div>`;
+
+      if (!isOther) {
+        el.onclick = () => selectCalDay(date.getFullYear(), date.getMonth(), date.getDate(), el);
+      }
+      return el;
+    }
+
+    function selectCalDay(year, month, day, el) {
+      if (selectedCalEl) selectedCalEl.classList.remove('selected');
+      el.classList.add('selected');
+      selectedCalEl = el;
+      renderDayDetail(year, month, day);
+    }
+
+    function renderDayDetail(year, month, day) {
+      const date = new Date(year, month, day);
+      const allLogs = loadLogs();
+      const dayLogs = allLogs
+        .filter(l => {
+          const d = new Date(l.timestamp);
+          return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+        })
+        .reverse(); // oldest first for timeline view
+
+      const dateStr = date.toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
+      const detail  = document.getElementById('dayDetail');
+
+      if (dayLogs.length === 0) {
+        detail.innerHTML = `
+          <div class="day-detail-title">${dateStr}のきろく</div>
+          <div class="day-no-log">この日の記録はありません 🌸</div>`;
+        return;
+      }
+
+      const nursingCount = dayLogs.filter(l => l.type === 'nursing').length;
+      const diaperCount  = dayLogs.filter(l => l.type === 'diaper').length;
+      const totalMin     = dayLogs
+        .filter(l => l.type === 'sleep' && l.subtype === 'end')
+        .reduce((s, l) => s + (l.duration || 0), 0);
+      const [sleepVal, sleepUnit] = fmtShort(totalMin);
+
+      detail.innerHTML = `
+        <div class="day-detail-title">${dateStr}のきろく</div>
+        <div class="day-stats">
+          <div class="day-stat-card">
+            <div class="stat-icon">🍼</div>
+            <div class="day-stat-val">${nursingCount}</div>
+            <div class="day-stat-unit">回</div>
+            <div class="day-stat-name">授乳</div>
+          </div>
+          <div class="day-stat-card">
+            <div class="stat-icon">🌿</div>
+            <div class="day-stat-val">${diaperCount}</div>
+            <div class="day-stat-unit">回</div>
+            <div class="day-stat-name">おむつ</div>
+          </div>
+          <div class="day-stat-card">
+            <div class="stat-icon">🌙</div>
+            <div class="day-stat-val">${sleepVal}</div>
+            <div class="day-stat-unit">${sleepUnit}</div>
+            <div class="day-stat-name">合計睡眠</div>
+          </div>
+        </div>
+        <ul class="log-list" id="dayLogList"></ul>`;
+
+      const ul = document.getElementById('dayLogList');
+      dayLogs.forEach(log => ul.appendChild(buildLogItem(log, -1, false)));
     }
 
     // ── Theme ─────────────────────────────────────────────
@@ -641,9 +928,12 @@
       const theme = localStorage.getItem(THEME_KEY) || 'light';
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+
+      updateHeaderName();
       updateSleepButton();
       if (getActiveSleep()) sleepTimer = setInterval(updateSleepButton, 30000);
-      renderLogs(); renderStats();
+      renderLogs();
+      renderStats();
     })();
   </script>
 
