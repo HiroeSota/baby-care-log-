@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>赤ちゃんケア記録</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+      background: #fdf6f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #f4a261;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 28px 24px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px;
+      border: none;
+      border-radius: 16px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      transition: transform 0.1s, opacity 0.1s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+      letter-spacing: 0.05em;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+      opacity: 0.85;
+    }
+
+    .btn-nursing  { background: #e76f51; }
+    .btn-diaper   { background: #2a9d8f; }
+    .btn-sleep    { background: #5c7ec4; }
+
+    .log-section {
+      flex: 1;
+      padding: 0 24px 32px;
+    }
+
+    .log-section h2 {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e8ddd5;
+      padding-bottom: 8px;
+    }
+
+    .log-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .log-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: white;
+      border-radius: 12px;
+      padding: 14px 18px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .log-icon {
+      font-size: 1.6rem;
+      width: 36px;
+      text-align: center;
+    }
+
+    .log-label {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .log-time {
+      margin-left: auto;
+      font-size: 0.95rem;
+      color: #888;
+      white-space: nowrap;
+    }
+
+    .empty {
+      text-align: center;
+      color: #bbb;
+      margin-top: 24px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>赤ちゃんケア記録</header>
+
+  <div class="buttons">
+    <button class="btn btn-nursing" onclick="addLog('授乳', '🍼')">🍼 授乳</button>
+    <button class="btn btn-diaper"  onclick="addLog('おむつ', '👶')">👶 おむつ</button>
+    <button class="btn btn-sleep"   onclick="addLog('睡眠', '😴')">😴 睡眠</button>
+  </div>
+
+  <div class="log-section">
+    <h2>記録一覧</h2>
+    <ul class="log-list" id="logList">
+      <li class="empty" id="emptyMsg">まだ記録がありません</li>
+    </ul>
+  </div>
+
+  <script>
+    function addLog(label, icon) {
+      const now = new Date();
+      const time = now.toLocaleTimeString('ja-JP', {
+        month: '2-digit',
+        day:   '2-digit',
+        hour:  '2-digit',
+        minute:'2-digit',
+      });
+      const date = now.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+
+      const list = document.getElementById('logList');
+      const empty = document.getElementById('emptyMsg');
+      if (empty) empty.remove();
+
+      const li = document.createElement('li');
+      li.className = 'log-item';
+      li.innerHTML = `
+        <span class="log-icon">${icon}</span>
+        <span class="log-label">${label}</span>
+        <span class="log-time">${date} ${now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</span>
+      `;
+
+      list.insertBefore(li, list.firstChild);
+    }
+  </script>
+
+</body>
+</html>
