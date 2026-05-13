@@ -333,6 +333,20 @@
     }
     .btn-confirm:disabled    { opacity: 0.4; box-shadow: none; cursor: default; }
     .btn-cancel:active, .btn-confirm:not(:disabled):active { opacity: 0.8; }
+
+    /* ── Past add button ── */
+    .past-add-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px; margin-bottom: 16px;
+      background: var(--bg-card); border: 2px dashed var(--option-sel-border);
+      border-radius: 16px; color: var(--tab-active); font-size: 0.95rem;
+      font-weight: bold; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .past-add-btn:active { background: var(--option-sel); }
+
+    /* ── Past modal scroll ── */
+    .modal-sheet-scroll { max-height: 88vh; overflow-y: auto; }
   </style>
 </head>
 <body>
@@ -489,6 +503,107 @@
     </div>
   </div>
 
+  <!-- ── Modal: Past Record ── -->
+  <div class="modal-backdrop" id="pastModal" onclick="if(event.target===this)closePastModal()">
+    <div class="modal-sheet modal-sheet-scroll">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="pastModalTitle">過去の記録を追記</div>
+
+      <div class="modal-sub-label">種類を選んでね</div>
+      <div class="opt-grid-2" style="margin-bottom:12px">
+        <button class="opt-btn" id="past-cat-nursing" onclick="selectPastCategory('nursing')">
+          <span class="opt-icon">🍼</span><span class="opt-label">授乳</span>
+        </button>
+        <button class="opt-btn" id="past-cat-diaper" onclick="selectPastCategory('diaper')">
+          <span class="opt-icon">🌿</span><span class="opt-label">おむつ</span>
+        </button>
+      </div>
+      <div class="opt-grid-full" style="margin-bottom:16px">
+        <button class="opt-btn" id="past-cat-sleep" onclick="selectPastCategory('sleep')">
+          <span class="opt-icon">🌙</span><span class="opt-label">睡眠</span>
+        </button>
+      </div>
+
+      <div id="pastSubSection" style="display:none">
+
+        <!-- Nursing sub -->
+        <div id="pastNursingSection" style="display:none">
+          <div class="modal-sub-label">授乳の種類</div>
+          <div class="opt-grid-2" style="margin-bottom:12px">
+            <button class="opt-btn" id="pnopt-right" onclick="selectPastNursingType('right')">
+              <span class="opt-icon">🤱</span><span class="opt-label">右おっぱい</span>
+            </button>
+            <button class="opt-btn" id="pnopt-left" onclick="selectPastNursingType('left')">
+              <span class="opt-icon">🤱</span><span class="opt-label">左おっぱい</span>
+            </button>
+          </div>
+          <div class="opt-grid-full" style="margin-bottom:12px">
+            <button class="opt-btn" id="pnopt-milk" onclick="selectPastNursingType('milk')">
+              <span class="opt-icon">🍶</span><span class="opt-label">ミルク</span>
+            </button>
+          </div>
+          <div id="pastMilkAmountSection" style="display:none;margin-bottom:12px">
+            <div class="modal-sub-label">量（任意）</div>
+            <input class="text-input" type="number" id="pastMilkAmount" inputmode="numeric" min="0" step="1" placeholder="例：120 ml">
+          </div>
+          <div class="modal-sub-label">時刻</div>
+          <input class="text-input" type="time" id="pastNursingTime" oninput="checkPastConfirmEnabled()" style="margin-bottom:14px">
+        </div>
+
+        <!-- Diaper sub -->
+        <div id="pastDiaperSection" style="display:none">
+          <div class="modal-sub-label">おむつの種類</div>
+          <div class="opt-grid-2" style="margin-bottom:12px">
+            <button class="opt-btn" id="pdopt-pee" onclick="selectPastDiaperType('pee')">
+              <span class="opt-icon">💧</span><span class="opt-label">おしっこ</span>
+            </button>
+            <button class="opt-btn" id="pdopt-poop" onclick="selectPastDiaperType('poop')">
+              <span class="opt-icon">💩</span><span class="opt-label">うんち</span>
+            </button>
+          </div>
+          <div id="pastCondSection" style="display:none;margin-bottom:12px">
+            <div class="modal-sub-label">うんちの状態（任意）</div>
+            <div class="cond-grid">
+              <button class="cond-btn" id="pcond-normal"   onclick="selectPastCondition('normal','😊','ふつう')">
+                <span class="opt-icon">😊</span><span class="opt-label">ふつう</span>
+              </button>
+              <button class="cond-btn" id="pcond-soft"     onclick="selectPastCondition('soft','🌟','やわらかめ')">
+                <span class="opt-icon">🌟</span><span class="opt-label">やわらかめ</span>
+              </button>
+              <button class="cond-btn" id="pcond-loose"    onclick="selectPastCondition('loose','💦','ゆるゆる')">
+                <span class="opt-icon">💦</span><span class="opt-label">ゆるゆる</span>
+              </button>
+              <button class="cond-btn" id="pcond-diarrhea" onclick="selectPastCondition('diarrhea','🚨','下痢ぎみ')">
+                <span class="opt-icon">🚨</span><span class="opt-label">下痢ぎみ</span>
+              </button>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div class="modal-sub-label">メモ（任意）</div>
+            <input class="text-input" type="text" id="pastDiaperMemo" placeholder="例：少し緑っぽかった" maxlength="60">
+          </div>
+          <div class="modal-sub-label">時刻</div>
+          <input class="text-input" type="time" id="pastDiaperTime" oninput="checkPastConfirmEnabled()" style="margin-bottom:14px">
+        </div>
+
+        <!-- Sleep sub -->
+        <div id="pastSleepSection" style="display:none">
+          <div class="modal-sub-label">ねんね開始の時刻</div>
+          <input class="text-input" type="time" id="pastSleepStart" oninput="checkPastConfirmEnabled()" style="margin-bottom:14px">
+          <div class="modal-sub-label">起きた時刻（任意）</div>
+          <input class="text-input" type="time" id="pastSleepEnd" style="margin-bottom:6px">
+          <div style="font-size:0.72rem;color:var(--time-txt);margin-bottom:14px">入力すると睡眠時間も一緒に記録されます</div>
+        </div>
+
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePastModal()">キャンセル</button>
+        <button class="btn-confirm" id="btnPastConfirm" onclick="confirmPast()" disabled>追記する ✓</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Baby Name ── -->
   <div class="modal-backdrop" id="nameModal" onclick="if(event.target===this)closeNameModal()">
     <div class="modal-sheet">
@@ -520,6 +635,15 @@
     let calYear             = new Date().getFullYear();
     let calMonth            = new Date().getMonth();
     let selectedCalEl       = null;
+    let selectedCalDate     = null; // {year, month, day}
+
+    // Past record state
+    let pastModalDate   = null;
+    let pastCategory    = null;
+    let pastNursingType = null;
+    let pastDiaperType  = null;
+    let pastCondId      = null;
+    let pastCondText    = null;
 
     // ── Storage ──────────────────────────────────────────
     function loadLogs() {
@@ -544,12 +668,12 @@
     }
 
     // ── Helpers ───────────────────────────────────────────
-    function nowDisplayTime() {
-      const d = new Date();
+    function fmtDisplayTime(d) {
       return d.toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' })
            + '　'
            + d.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' });
     }
+    function nowDisplayTime() { return fmtDisplayTime(new Date()); }
 
     function fmtShort(min) {
       if (min < 1)  return ['—', ''];
@@ -777,13 +901,13 @@
     function prevMonth() {
       calMonth--;
       if (calMonth < 0) { calMonth = 11; calYear--; }
-      selectedCalEl = null;
+      selectedCalEl = null; selectedCalDate = null;
       renderCalendar();
     }
     function nextMonth() {
       calMonth++;
       if (calMonth > 11) { calMonth = 0; calYear++; }
-      selectedCalEl = null;
+      selectedCalEl = null; selectedCalDate = null;
       renderCalendar();
     }
 
@@ -823,8 +947,20 @@
         grid.appendChild(makeDayCell(d, calYear, calMonth + 1, true, logsMap, today));
       }
 
-      // Reset detail if no selection
-      if (!selectedCalEl) {
+      // Restore or reset detail
+      if (selectedCalDate) {
+        const { year: sy, month: sm, day: sd } = selectedCalDate;
+        for (const cell of document.querySelectorAll('#calGrid .cal-day:not(.other-month)')) {
+          if (parseInt(cell.dataset.calYear) === sy &&
+              parseInt(cell.dataset.calMonth) === sm &&
+              parseInt(cell.dataset.calDay) === sd) {
+            cell.classList.add('selected');
+            selectedCalEl = cell;
+            break;
+          }
+        }
+        renderDayDetail(sy, sm, sd);
+      } else {
         document.getElementById('dayDetail').innerHTML =
           '<div class="cal-placeholder">📅 日付をタップするときろくを確認できます</div>';
       }
@@ -838,6 +974,7 @@
 
       const el = document.createElement('div');
       el.className = 'cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '');
+      el.dataset.calYear = year; el.dataset.calMonth = month; el.dataset.calDay = day;
 
       el.innerHTML = `
         <div class="cal-day-inner"><span class="cal-day-num">${date.getDate()}</span></div>
@@ -856,7 +993,8 @@
     function selectCalDay(year, month, day, el) {
       if (selectedCalEl) selectedCalEl.classList.remove('selected');
       el.classList.add('selected');
-      selectedCalEl = el;
+      selectedCalEl  = el;
+      selectedCalDate = { year, month, day };
       renderDayDetail(year, month, day);
     }
 
@@ -873,9 +1011,12 @@
       const dateStr = date.toLocaleDateString('ja-JP', { month:'long', day:'numeric', weekday:'short' });
       const detail  = document.getElementById('dayDetail');
 
+      const addBtn = `<button class="past-add-btn" onclick="openPastModal(${year},${month},${day})">＋ この日に追記する</button>`;
+
       if (dayLogs.length === 0) {
         detail.innerHTML = `
           <div class="day-detail-title">${dateStr}のきろく</div>
+          ${addBtn}
           <div class="day-no-log">この日の記録はありません 🌸</div>`;
         return;
       }
@@ -889,6 +1030,7 @@
 
       detail.innerHTML = `
         <div class="day-detail-title">${dateStr}のきろく</div>
+        ${addBtn}
         <div class="day-stats">
           <div class="day-stat-card">
             <div class="stat-icon">🍼</div>
@@ -913,6 +1055,157 @@
 
       const ul = document.getElementById('dayLogList');
       dayLogs.forEach(log => ul.appendChild(buildLogItem(log, -1, false)));
+    }
+
+    // ── Past Record Modal ─────────────────────────────────
+    function openPastModal(year, month, day) {
+      pastModalDate   = { year, month, day };
+      pastCategory    = null;
+      pastNursingType = null;
+      pastDiaperType  = null;
+      pastCondId      = null;
+      pastCondText    = null;
+
+      document.querySelectorAll('[id^="past-cat-"]').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('[id^="pnopt-"]').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('[id^="pdopt-"]').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('[id^="pcond-"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById('pastSubSection').style.display   = 'none';
+      document.getElementById('pastNursingSection').style.display = 'none';
+      document.getElementById('pastDiaperSection').style.display  = 'none';
+      document.getElementById('pastSleepSection').style.display   = 'none';
+      document.getElementById('pastCondSection').style.display     = 'none';
+      document.getElementById('pastMilkAmountSection').style.display = 'none';
+      document.getElementById('pastMilkAmount').value  = '';
+      document.getElementById('pastDiaperMemo').value  = '';
+      document.getElementById('pastSleepEnd').value    = '';
+      document.getElementById('btnPastConfirm').disabled = true;
+
+      const now = new Date();
+      const hh  = String(now.getHours()).padStart(2, '0');
+      const mm  = String(now.getMinutes()).padStart(2, '0');
+      const t   = `${hh}:${mm}`;
+      document.getElementById('pastNursingTime').value = t;
+      document.getElementById('pastDiaperTime').value  = t;
+      document.getElementById('pastSleepStart').value  = t;
+
+      const date    = new Date(year, month, day);
+      const dateStr = date.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+      document.getElementById('pastModalTitle').textContent = `${dateStr}の記録を追記`;
+      document.getElementById('pastModal').classList.add('open');
+    }
+
+    function closePastModal() { document.getElementById('pastModal').classList.remove('open'); }
+
+    function selectPastCategory(cat) {
+      pastCategory    = cat;
+      pastNursingType = null;
+      pastDiaperType  = null;
+      pastCondId      = null;
+      pastCondText    = null;
+      document.querySelectorAll('[id^="past-cat-"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById(`past-cat-${cat}`).classList.add('selected');
+      document.getElementById('pastSubSection').style.display     = 'block';
+      document.getElementById('pastNursingSection').style.display = cat === 'nursing' ? 'block' : 'none';
+      document.getElementById('pastDiaperSection').style.display  = cat === 'diaper'  ? 'block' : 'none';
+      document.getElementById('pastSleepSection').style.display   = cat === 'sleep'   ? 'block' : 'none';
+      checkPastConfirmEnabled();
+    }
+
+    function selectPastNursingType(type) {
+      pastNursingType = type;
+      document.querySelectorAll('[id^="pnopt-"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById(`pnopt-${type}`).classList.add('selected');
+      document.getElementById('pastMilkAmountSection').style.display = type === 'milk' ? 'block' : 'none';
+      checkPastConfirmEnabled();
+    }
+
+    function selectPastDiaperType(type) {
+      pastDiaperType = type;
+      pastCondId = null; pastCondText = null;
+      document.querySelectorAll('[id^="pdopt-"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById(`pdopt-${type}`).classList.add('selected');
+      document.querySelectorAll('[id^="pcond-"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById('pastCondSection').style.display = type === 'poop' ? 'block' : 'none';
+      checkPastConfirmEnabled();
+    }
+
+    function selectPastCondition(id, icon, label) {
+      pastCondId   = id;
+      pastCondText = `${icon} ${label}`;
+      document.querySelectorAll('[id^="pcond-"]').forEach(b => b.classList.remove('selected'));
+      document.getElementById(`pcond-${id}`).classList.add('selected');
+    }
+
+    function checkPastConfirmEnabled() {
+      let ok = false;
+      if (pastCategory === 'nursing') ok = !!pastNursingType && !!document.getElementById('pastNursingTime').value;
+      if (pastCategory === 'diaper')  ok = !!pastDiaperType  && !!document.getElementById('pastDiaperTime').value;
+      if (pastCategory === 'sleep')   ok = !!document.getElementById('pastSleepStart').value;
+      document.getElementById('btnPastConfirm').disabled = !ok;
+    }
+
+    function confirmPast() {
+      if (!pastCategory || !pastModalDate) return;
+      const { year, month, day } = pastModalDate;
+      const logs    = loadLogs();
+      const newLogs = [];
+
+      if (pastCategory === 'nursing') {
+        if (!pastNursingType) return;
+        const [hh, mm] = document.getElementById('pastNursingTime').value.split(':').map(Number);
+        const ts = new Date(year, month, day, hh, mm);
+        let label, icon = '🍼';
+        if (pastNursingType === 'right')     label = '授乳 — 右おっぱい';
+        else if (pastNursingType === 'left') label = '授乳 — 左おっぱい';
+        else {
+          icon = '🍶';
+          const ml = parseInt(document.getElementById('pastMilkAmount').value, 10);
+          label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
+        }
+        newLogs.push({ type:'nursing', subtype:pastNursingType, label, icon,
+                       displayTime: fmtDisplayTime(ts), timestamp: ts.toISOString() });
+      }
+
+      else if (pastCategory === 'diaper') {
+        if (!pastDiaperType) return;
+        const [hh, mm] = document.getElementById('pastDiaperTime').value.split(':').map(Number);
+        const ts   = new Date(year, month, day, hh, mm);
+        const isPee = pastDiaperType === 'pee';
+        const memo  = document.getElementById('pastDiaperMemo').value.trim() || null;
+        newLogs.push({ type:'diaper', subtype:pastDiaperType,
+                       conditionText: pastCondText, memo,
+                       label: isPee ? 'おしっこ' : 'うんち',
+                       icon:  isPee ? '💧' : '💩',
+                       displayTime: fmtDisplayTime(ts), timestamp: ts.toISOString() });
+      }
+
+      else if (pastCategory === 'sleep') {
+        const startVal = document.getElementById('pastSleepStart').value;
+        if (!startVal) return;
+        const [sh, sm] = startVal.split(':').map(Number);
+        const startTs  = new Date(year, month, day, sh, sm);
+        newLogs.push({ type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
+                       displayTime: fmtDisplayTime(startTs), timestamp: startTs.toISOString() });
+        const endVal = document.getElementById('pastSleepEnd').value;
+        if (endVal) {
+          const [eh, em] = endVal.split(':').map(Number);
+          let endTs = new Date(year, month, day, eh, em);
+          if (endTs <= startTs) endTs = new Date(endTs.getTime() + 24 * 60 * 60 * 1000);
+          const duration = Math.round((endTs - startTs) / 60000);
+          newLogs.push({ type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
+                         duration, displayTime: fmtDisplayTime(endTs), timestamp: endTs.toISOString() });
+        }
+      }
+
+      if (newLogs.length === 0) return;
+      newLogs.forEach(l => logs.push(l));
+      logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      saveLogs(logs);
+      closePastModal();
+      renderLogs();
+      renderStats();
+      renderCalendar();
     }
 
     // ── Theme ─────────────────────────────────────────────
