@@ -622,10 +622,12 @@
   </div>
 
   <script>
-    const STORAGE_KEY      = 'baby-care-logs';
-    const THEME_KEY        = 'baby-care-theme';
-    const ACTIVE_SLEEP_KEY = 'baby-care-active-sleep';
-    const NAME_KEY         = 'baby-care-name';
+    const THEME_KEY = 'baby-care-theme';
+
+    // In-memory state backed by SQLite
+    let logs        = [];
+    let activeSleep = null;
+    let babyName    = '';
 
     let sleepTimer          = null;
     let selectedNursingType = null;
@@ -645,23 +647,31 @@
     let pastCondId      = null;
     let pastCondText    = null;
 
-    // ── Storage ──────────────────────────────────────────
-    function loadLogs() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-      catch { return []; }
+    // ── API helpers ───────────────────────────────────────
+    async function apiPost(url, body) {
+      const res = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      return res.json();
     }
-    function saveLogs(logs) { localStorage.setItem(STORAGE_KEY, JSON.stringify(logs)); }
 
-    function getActiveSleep() {
-      try { return JSON.parse(localStorage.getItem(ACTIVE_SLEEP_KEY)); }
-      catch { return null; }
+    async function apiAddLog(entry) {
+      const { id } = await apiPost('/api/logs', entry);
+      entry.id = id;
     }
+
+    // ── Storage (SQLite-backed) ───────────────────────────
+    function loadLogs() { return logs; }
+
+    function getActiveSleep() { return activeSleep; }
     function setActiveSleep(d) {
-      d === null ? localStorage.removeItem(ACTIVE_SLEEP_KEY)
-                 : localStorage.setItem(ACTIVE_SLEEP_KEY, JSON.stringify(d));
+      activeSleep = d;
+      if (d === null) fetch('/api/settings/active-sleep', { method: 'DELETE' });
+      else apiPost('/api/settings/active-sleep', { value: JSON.stringify(d) });
     }
 
-    function getBabyName() { return localStorage.getItem(NAME_KEY) || ''; }
+    function getBabyName() { return babyName; }
     function updateHeaderName() {
       const name = getBabyName() || '赤ちゃん';
       document.getElementById('headerName').textContent = name;
@@ -719,7 +729,7 @@
         ? `<span class="log-sub">${subParts.join('　·　')}</span>` : '';
 
       const deleteBtn = withDelete
-        ? `<button class="delete-btn" onclick="deleteLog(${index})" title="削除">✕</button>` : '';
+        ? `<button class="delete-btn" onclick="deleteLog(${log.id})" title="削除">✕</button>` : '';
 
       const li = document.createElement('li');
       li.className = 'log-item';
@@ -763,36 +773,39 @@
       document.getElementById('statSleepUnit').textContent = unit;
     }
 
-    function deleteLog(i) {
-      const logs = loadLogs();
-      logs.splice(i, 1);
-      saveLogs(logs);
+    function deleteLog(id) {
+      const idx = logs.findIndex(l => l.id === id);
+      if (idx !== -1) logs.splice(idx, 1);
+      fetch(`/api/logs/${id}`, { method: 'DELETE' });
       renderLogs();
       renderStats();
       if (selectedCalDate) renderCalendar();
     }
 
     // ── Sleep ─────────────────────────────────────────────
-    function handleSleep() {
+    async function handleSleep() {
       const active = getActiveSleep();
       const now = new Date();
       if (active) {
         const duration = Math.round((now - new Date(active.timestamp)) / 60000);
-        const logs = loadLogs();
-        logs.unshift({ type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
-                       duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() });
-        saveLogs(logs);
+        const entry = { type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
+                        duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() };
+        logs.unshift(entry);
         setActiveSleep(null);
         clearInterval(sleepTimer); sleepTimer = null;
+        updateSleepButton();
+        await apiAddLog(entry);
+        renderLogs(); renderStats();
       } else {
-        const logs = loadLogs();
-        logs.unshift({ type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
-                       displayTime: nowDisplayTime(), timestamp: now.toISOString() });
-        saveLogs(logs);
+        const entry = { type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
+                        displayTime: nowDisplayTime(), timestamp: now.toISOString() };
+        logs.unshift(entry);
         setActiveSleep({ timestamp: now.toISOString() });
         sleepTimer = setInterval(updateSleepButton, 30000);
+        updateSleepButton();
+        await apiAddLog(entry);
+        renderLogs(); renderStats();
       }
-      updateSleepButton(); renderLogs(); renderStats();
     }
 
     function updateSleepButton() {
@@ -828,7 +841,7 @@
       document.getElementById('milkAmountSection').style.display = type === 'milk' ? 'block' : 'none';
       document.getElementById('btnNursingConfirm').disabled = false;
     }
-    function confirmNursing() {
+    async function confirmNursing() {
       if (!selectedNursingType) return;
       let label, icon = '🍼';
       if (selectedNursingType === 'right') { label = '授乳 — 右おっぱい'; }
@@ -838,11 +851,12 @@
         const ml = parseInt(document.getElementById('milkAmount').value, 10);
         label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
       }
-      const logs = loadLogs();
-      logs.unshift({ type:'nursing', subtype:selectedNursingType, label, icon,
-                     displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
-      saveLogs(logs);
-      closeNursingModal(); renderLogs(); renderStats();
+      const entry = { type:'nursing', subtype:selectedNursingType, label, icon,
+                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() };
+      logs.unshift(entry);
+      closeNursingModal();
+      await apiAddLog(entry);
+      renderLogs(); renderStats();
     }
 
     // ── Diaper Modal ──────────────────────────────────────
@@ -869,18 +883,19 @@
       document.querySelectorAll('[id^="cond-"]').forEach(b => b.classList.remove('selected'));
       document.getElementById(`cond-${id}`).classList.add('selected');
     }
-    function confirmDiaper() {
+    async function confirmDiaper() {
       if (!selectedDiaperType) return;
       const isPee = selectedDiaperType === 'pee';
       const memo  = document.getElementById('diaperMemo').value.trim() || null;
-      const logs  = loadLogs();
-      logs.unshift({ type:'diaper', subtype:selectedDiaperType,
-                     conditionText: selectedCondText, memo,
-                     label: isPee ? 'おしっこ' : 'うんち',
-                     icon:  isPee ? '💧' : '💩',
-                     displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
-      saveLogs(logs);
-      closeDiaperModal(); renderLogs(); renderStats();
+      const entry = { type:'diaper', subtype:selectedDiaperType,
+                      conditionText: selectedCondText, memo,
+                      label: isPee ? 'おしっこ' : 'うんち',
+                      icon:  isPee ? '💧' : '💩',
+                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() };
+      logs.unshift(entry);
+      closeDiaperModal();
+      await apiAddLog(entry);
+      renderLogs(); renderStats();
     }
 
     // ── Baby Name Modal ───────────────────────────────────
@@ -892,8 +907,9 @@
     function closeNameModal() { document.getElementById('nameModal').classList.remove('open'); }
     function saveBabyName() {
       const name = document.getElementById('babyNameInput').value.trim();
-      if (name) localStorage.setItem(NAME_KEY, name);
-      else localStorage.removeItem(NAME_KEY);
+      babyName = name;
+      if (name) apiPost('/api/settings/baby-name', { value: name });
+      else fetch('/api/settings/baby-name', { method: 'DELETE' });
       updateHeaderName();
       closeNameModal();
     }
@@ -1055,10 +1071,7 @@
         <ul class="log-list" id="dayLogList"></ul>`;
 
       const ul = document.getElementById('dayLogList');
-      dayLogs.forEach(log => {
-        const idx = allLogs.findIndex(l => l.timestamp === log.timestamp);
-        ul.appendChild(buildLogItem(log, idx, true));
-      });
+      dayLogs.forEach(log => ul.appendChild(buildLogItem(log, log.id, true)));
     }
 
     // ── Past Record Modal ─────────────────────────────────
@@ -1149,10 +1162,9 @@
       document.getElementById('btnPastConfirm').disabled = !ok;
     }
 
-    function confirmPast() {
+    async function confirmPast() {
       if (!pastCategory || !pastModalDate) return;
       const { year, month, day } = pastModalDate;
-      const logs    = loadLogs();
       const newLogs = [];
 
       if (pastCategory === 'nursing') {
@@ -1205,8 +1217,8 @@
       if (newLogs.length === 0) return;
       newLogs.forEach(l => logs.push(l));
       logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      saveLogs(logs);
       closePastModal();
+      await Promise.all(newLogs.map(apiAddLog));
       renderLogs();
       renderStats();
       renderCalendar();
@@ -1221,14 +1233,40 @@
     }
 
     // ── Init ──────────────────────────────────────────────
-    (function init() {
+    (async function init() {
       const theme = localStorage.getItem(THEME_KEY) || 'light';
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
 
+      // One-time migration from localStorage to SQLite
+      const MIGRATED_KEY = 'baby-care-migrated-v1';
+      if (!localStorage.getItem(MIGRATED_KEY)) {
+        const oldLogs  = JSON.parse(localStorage.getItem('baby-care-logs') || '[]');
+        const oldName  = localStorage.getItem('baby-care-name');
+        const oldSleep = localStorage.getItem('baby-care-active-sleep');
+        if (oldLogs.length > 0 || oldName || oldSleep) {
+          await apiPost('/api/migrate', {
+            logs: oldLogs,
+            name: oldName || null,
+            activeSleep: oldSleep ? JSON.parse(oldSleep) : null
+          });
+        }
+        localStorage.setItem(MIGRATED_KEY, '1');
+      }
+
+      // Load all data from SQLite
+      const [logsData, nameData, sleepData] = await Promise.all([
+        fetch('/api/logs').then(r => r.json()),
+        fetch('/api/settings/baby-name').then(r => r.json()),
+        fetch('/api/settings/active-sleep').then(r => r.json())
+      ]);
+      logs        = logsData;
+      babyName    = nameData.value || '';
+      activeSleep = sleepData.value ? JSON.parse(sleepData.value) : null;
+
       updateHeaderName();
       updateSleepButton();
-      if (getActiveSleep()) sleepTimer = setInterval(updateSleepButton, 30000);
+      if (activeSleep) sleepTimer = setInterval(updateSleepButton, 30000);
       renderLogs();
       renderStats();
     })();
