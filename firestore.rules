@@ -17,7 +17,10 @@ service cloud.firestore {
       allow create: if request.auth != null;
     }
     match /families/{familyId} {
-      allow read, write: if isMember(familyId);
+      // 新規作成：自分の UID を familyId とする場合のみ許可
+      allow create: if request.auth != null && request.auth.uid == familyId;
+      // 読み取り・更新・削除：メンバーのみ
+      allow read, update, delete: if isMember(familyId);
       match /{subcollection}/{docId} {
         allow read, write: if isMember(familyId);
       }
