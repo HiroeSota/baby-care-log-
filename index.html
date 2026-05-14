@@ -426,6 +426,19 @@
       color: #e07090; font-weight: bold; cursor: pointer;
       font-family: inherit; margin-top: 4px;
     }
+    /* ── Snackbar (undo delete) ── */
+    .snackbar {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #333; color: #fff; border-radius: 12px; padding: 12px 18px;
+      display: flex; align-items: center; gap: 14px; font-size: 0.88rem;
+      z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.3); white-space: nowrap;
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .snackbar.hidden { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(10px); }
+    .snackbar-undo {
+      background: none; border: none; color: #ffb5c8; font-weight: bold;
+      font-size: 0.88rem; cursor: pointer; padding: 0; font-family: inherit;
+    }
   </style>
 </head>
 <body>
@@ -751,6 +764,12 @@
     </div>
   </div>
 
+  <!-- Snackbar -->
+  <div id="snackbar" class="snackbar hidden">
+    <span id="snackbarMsg">記録を削除しました</span>
+    <button class="snackbar-undo" onclick="undoDelete()">取り消し</button>
+  </div>
+
   <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -779,6 +798,8 @@
     let currentUser         = null;
     let familyId            = null;
     let unsubscribeListener = null;
+    let pendingDelete       = null;
+    let snackbarTimer       = null;
 
     let sleepTimer          = null;
     let selectedNursingType = null;
@@ -914,11 +935,42 @@
     }
 
     function deleteLog(id) {
+      if (pendingDelete) commitDelete();
       const idx = logs.findIndex(l => l.id === id);
-      if (idx !== -1) logs.splice(idx, 1);
+      if (idx === -1) return;
+      pendingDelete = { id, log: logs[idx] };
+      logs.splice(idx, 1);
       renderLogs(); renderStats();
       if (selectedCalDate) renderCalendar();
-      logsCol().doc(id).delete();
+      showSnackbar();
+    }
+
+    function commitDelete() {
+      if (!pendingDelete) return;
+      logsCol().doc(pendingDelete.id).delete();
+      pendingDelete = null;
+    }
+
+    function undoDelete() {
+      if (!pendingDelete) return;
+      clearTimeout(snackbarTimer);
+      logs.push(pendingDelete.log);
+      logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      pendingDelete = null;
+      hideSnackbar();
+      renderLogs(); renderStats();
+      if (selectedCalDate) renderCalendar();
+    }
+
+    function showSnackbar() {
+      clearTimeout(snackbarTimer);
+      const el = document.getElementById('snackbar');
+      el.classList.remove('hidden');
+      snackbarTimer = setTimeout(() => { commitDelete(); hideSnackbar(); }, 4000);
+    }
+
+    function hideSnackbar() {
+      document.getElementById('snackbar').classList.add('hidden');
     }
 
     // ── Sleep ─────────────────────────────────────────────
