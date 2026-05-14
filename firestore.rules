@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function getUserFamily() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.familyId;
+    }
+    function isMember(familyId) {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUserFamily() == familyId;
+    }
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /familyCodes/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+    }
+    match /families/{familyId} {
+      allow read, write: if isMember(familyId);
+      match /{subcollection}/{docId} {
+        allow read, write: if isMember(familyId);
+      }
+    }
+  }
+}

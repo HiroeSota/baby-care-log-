@@ -11,5 +11,8 @@
       "package-lock.json",
       "baby-care.db"
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

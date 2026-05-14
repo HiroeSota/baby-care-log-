@@ -347,13 +347,92 @@
 
     /* ── Past modal scroll ── */
     .modal-sheet-scroll { max-height: 88vh; overflow-y: auto; }
+
+    /* ── Auth / Family screens ── */
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .auth-card {
+      background: var(--bg-card); border-radius: 24px;
+      padding: 40px 28px 36px; width: 100%; max-width: 360px;
+      box-shadow: 0 8px 32px rgba(200,140,160,0.18);
+      text-align: center;
+    }
+    .auth-logo { font-size: 3rem; margin-bottom: 12px; }
+    .auth-title { font-size: 1.3rem; font-weight: bold; color: var(--label-txt); margin-bottom: 6px; }
+    .auth-sub { font-size: 0.82rem; color: var(--sub-txt); margin-bottom: 28px; line-height: 1.6; }
+    .btn-google {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; padding: 14px;
+      background: #fff; border: 1.5px solid #ddd; border-radius: 14px;
+      font-size: 0.95rem; font-weight: bold; color: #444; gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; font-family: inherit;
+    }
+    .btn-family-primary {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg,#ffb5c8,#ffd6a5);
+      border: none; border-radius: 14px; color: #7a4050;
+      font-weight: bold; margin-bottom: 12px;
+      cursor: pointer; font-family: inherit; font-size: 1rem;
+    }
+    .or-divider {
+      font-size: 0.8rem; color: var(--sub-txt); margin: 8px 0 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .or-divider::before, .or-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .code-join-row { display: flex; gap: 8px; }
+    .code-join-row input {
+      flex: 1; padding: 13px 14px;
+      background: var(--input-bg); border: 1.5px solid var(--input-border);
+      border-radius: 12px; letter-spacing: 0.1em; text-align: center;
+      text-transform: uppercase; font-size: 1.1rem; color: var(--label-txt);
+      font-family: inherit; outline: none;
+    }
+    .btn-join {
+      padding: 13px 18px;
+      background: var(--option-sel); border: 1.5px solid var(--option-sel-border);
+      border-radius: 12px; color: var(--tab-active); font-weight: bold;
+      white-space: nowrap; cursor: pointer; font-family: inherit;
+    }
+    .family-msg { font-size: 0.82rem; margin-top: 14px; min-height: 20px; }
+    .family-msg.error { color: #e07090; }
+    .family-msg.info  { color: var(--sub-txt); }
+    .invite-code-box {
+      background: var(--bg-stats); border-radius: 16px; padding: 20px; margin: 16px 0;
+    }
+    .invite-code-label { font-size: 0.78rem; color: var(--sub-txt); margin-bottom: 8px; }
+    .invite-code-value {
+      font-size: 2rem; font-weight: bold;
+      letter-spacing: 0.25em; color: var(--tab-active);
+    }
+    .invite-code-hint { font-size: 0.76rem; color: var(--sub-txt); margin-top: 8px; }
+    .btn-start {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg,#ffb5c8,#ffd6a5);
+      border: none; border-radius: 14px; color: #7a4050;
+      font-weight: bold; margin-top: 4px;
+      cursor: pointer; font-family: inherit; font-size: 1rem;
+    }
+    .account-section { margin-bottom: 20px; text-align: left; }
+    .account-label { font-size: 0.8rem; color: var(--sub-txt); margin-bottom: 8px; }
+    .btn-logout {
+      width: 100%; padding: 12px; background: none;
+      border: 1.5px solid #f5c0cc; border-radius: 12px;
+      color: #e07090; font-weight: bold; cursor: pointer;
+      font-family: inherit; margin-top: 4px;
+    }
   </style>
 </head>
 <body>
 
   <!-- ── Header ── -->
   <header>
-    <button class="header-icon-btn" onclick="openNameModal()" title="名前を変更">✏️</button>
+    <button class="header-icon-btn" onclick="openAccountModal()" title="設定">⚙️</button>
     <div class="header-inner">
       <div class="header-title">🌸 <span id="headerName">赤ちゃん</span>のきろく</div>
       <div class="header-sub">育児のきろくをかんたんに</div>
@@ -604,26 +683,76 @@
     </div>
   </div>
 
-  <!-- ── Modal: Baby Name ── -->
-  <div class="modal-backdrop" id="nameModal" onclick="if(event.target===this)closeNameModal()">
+  <!-- ── Modal: Account ── -->
+  <div class="modal-backdrop" id="accountModal" onclick="if(event.target===this)closeAccountModal()">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <div class="modal-title">赤ちゃんの名前を入力してね</div>
-      <div class="text-input-section">
+      <div class="modal-title">⚙️ 設定</div>
+      <div class="account-section">
+        <div class="account-label">赤ちゃんの名前</div>
         <input class="text-input" type="text" id="babyNameInput"
                placeholder="例：はな" maxlength="20"
                onkeydown="if(event.key==='Enter')saveBabyName()">
       </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeNameModal()">キャンセル</button>
-        <button class="btn-confirm" onclick="saveBabyName()">保存する ✓</button>
+      <div class="account-section">
+        <div class="account-label">家族コード（パートナーに共有）</div>
+        <div class="invite-code-box" style="margin:0">
+          <div class="invite-code-value" id="accountCodeDisplay" style="font-size:1.5rem">------</div>
+        </div>
       </div>
+      <div class="modal-actions" style="flex-direction:column;gap:10px">
+        <button class="btn-confirm" onclick="saveBabyName()">名前を保存する ✓</button>
+        <button class="btn-logout" onclick="handleSignOut()">ログアウト</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Auth Screen ── -->
+  <div id="authScreen" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-logo">👶</div>
+      <h1 class="auth-title">赤ちゃんケア記録</h1>
+      <p class="auth-sub">家族みんなで一緒に<br>記録・リアルタイム共有</p>
+      <button class="btn-google" onclick="signInWithGoogle()">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Googleでログイン
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Family Setup Screen ── -->
+  <div id="familyScreen" class="auth-overlay" style="display:none">
+    <div class="auth-card" id="familySetupCard">
+      <div class="auth-logo">👨‍👩‍👧</div>
+      <h2 class="auth-title">家族を設定</h2>
+      <p class="auth-sub">はじめての方は「新規作成」を<br>パートナーの方はコードを入力</p>
+      <button class="btn-family-primary" onclick="createFamily()">✨ 新しい家族を作成</button>
+      <div class="or-divider">または</div>
+      <div class="code-join-row">
+        <input id="joinCodeInput" type="text" placeholder="XXXXXX" maxlength="6"
+               oninput="this.value=this.value.toUpperCase()"
+               onkeydown="if(event.key==='Enter')joinFamily()">
+        <button class="btn-join" onclick="joinFamily()">参加</button>
+      </div>
+      <div id="familyMsg" class="family-msg"></div>
+    </div>
+    <div class="auth-card" id="codeDisplayCard" style="display:none">
+      <div class="auth-logo">🎉</div>
+      <h2 class="auth-title">家族コード発行！</h2>
+      <p class="auth-sub">パートナーにこのコードを<br>共有してください</p>
+      <div class="invite-code-box">
+        <div class="invite-code-label">家族コード</div>
+        <div class="invite-code-value" id="inviteCodeDisplay">------</div>
+        <div class="invite-code-hint">設定ボタンからいつでも確認できます</div>
+      </div>
+      <button class="btn-start" onclick="proceedToApp()">アプリを開始 →</button>
     </div>
   </div>
 
   <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
   <script>
     const THEME_KEY = 'baby-care-theme';
@@ -645,6 +774,10 @@
     let logs        = [];
     let activeSleep = null;
     let babyName    = '';
+
+    let currentUser         = null;
+    let familyId            = null;
+    let unsubscribeListener = null;
 
     let sleepTimer          = null;
     let selectedNursingType = null;
@@ -670,11 +803,14 @@
     function getActiveSleep() { return activeSleep; }
     function setActiveSleep(d) {
       activeSleep = d;
-      if (d === null) db.collection('settings').doc('active-sleep').delete();
-      else db.collection('settings').doc('active-sleep').set({ value: JSON.stringify(d) });
+      if (d === null) settingsDoc('active-sleep').delete();
+      else settingsDoc('active-sleep').set({ value: JSON.stringify(d) });
     }
 
     function getBabyName() { return babyName; }
+    function logsCol()        { return db.collection('families').doc(familyId).collection('logs'); }
+    function settingsDoc(key) { return db.collection('families').doc(familyId).collection('settings').doc(key); }
+
     function updateHeaderName() {
       const name = getBabyName() || '赤ちゃん';
       document.getElementById('headerName').textContent = name;
@@ -781,7 +917,7 @@
       if (idx !== -1) logs.splice(idx, 1);
       renderLogs(); renderStats();
       if (selectedCalDate) renderCalendar();
-      db.collection('logs').doc(id).delete();
+      logsCol().doc(id).delete();
     }
 
     // ── Sleep ─────────────────────────────────────────────
@@ -793,14 +929,14 @@
         setActiveSleep(null);
         clearInterval(sleepTimer); sleepTimer = null;
         updateSleepButton();
-        db.collection('logs').add({ type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
-                                    duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() });
+        logsCol().add({ type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
+                        duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() });
       } else {
         setActiveSleep({ timestamp: now.toISOString() });
         sleepTimer = setInterval(updateSleepButton, 30000);
         updateSleepButton();
-        db.collection('logs').add({ type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
-                                    displayTime: nowDisplayTime(), timestamp: now.toISOString() });
+        logsCol().add({ type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
+                        displayTime: nowDisplayTime(), timestamp: now.toISOString() });
       }
     }
 
@@ -848,8 +984,8 @@
         label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
       }
       closeNursingModal();
-      db.collection('logs').add({ type:'nursing', subtype:selectedNursingType, label, icon,
-                                  displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
+      logsCol().add({ type:'nursing', subtype:selectedNursingType, label, icon,
+                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
     }
 
     // ── Diaper Modal ──────────────────────────────────────
@@ -881,27 +1017,33 @@
       const isPee = selectedDiaperType === 'pee';
       const memo  = document.getElementById('diaperMemo').value.trim() || null;
       closeDiaperModal();
-      db.collection('logs').add({ type:'diaper', subtype:selectedDiaperType,
-                                  conditionText: selectedCondText, memo,
-                                  label: isPee ? 'おしっこ' : 'うんち',
-                                  icon:  isPee ? '💧' : '💩',
-                                  displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
+      logsCol().add({ type:'diaper', subtype:selectedDiaperType,
+                      conditionText: selectedCondText, memo,
+                      label: isPee ? 'おしっこ' : 'うんち',
+                      icon:  isPee ? '💧' : '💩',
+                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
     }
 
-    // ── Baby Name Modal ───────────────────────────────────
-    function openNameModal() {
+    // ── Account Modal ─────────────────────────────────────
+    function openAccountModal() {
       document.getElementById('babyNameInput').value = getBabyName();
-      document.getElementById('nameModal').classList.add('open');
+      // Show family code
+      if (familyId) {
+        db.collection('families').doc(familyId).get().then(doc => {
+          if (doc.exists) document.getElementById('accountCodeDisplay').textContent = doc.data().inviteCode || '------';
+        });
+      }
+      document.getElementById('accountModal').classList.add('open');
       setTimeout(() => document.getElementById('babyNameInput').focus(), 300);
     }
-    function closeNameModal() { document.getElementById('nameModal').classList.remove('open'); }
+    function closeAccountModal() { document.getElementById('accountModal').classList.remove('open'); }
     function saveBabyName() {
       const name = document.getElementById('babyNameInput').value.trim();
       babyName = name;
-      if (name) db.collection('settings').doc('baby-name').set({ value: name });
-      else db.collection('settings').doc('baby-name').delete();
+      if (name) settingsDoc('baby-name').set({ value: name });
+      else settingsDoc('baby-name').delete();
       updateHeaderName();
-      closeNameModal();
+      closeAccountModal();
     }
 
     // ── Calendar ──────────────────────────────────────────
@@ -1206,7 +1348,112 @@
 
       if (newLogs.length === 0) return;
       closePastModal();
-      newLogs.forEach(l => db.collection('logs').add(l));
+      newLogs.forEach(l => logsCol().add(l));
+    }
+
+    // ── Auth & Family ─────────────────────────────────────
+    function signInWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider).catch(err => console.error('Login error:', err));
+    }
+
+    function handleSignOut() {
+      if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
+      logs = []; activeSleep = null; babyName = ''; familyId = null;
+      closeAccountModal();
+      firebase.auth().signOut();
+    }
+
+    async function createFamily() {
+      const code = generateCode();
+      const uid  = currentUser.uid;
+      const batch = db.batch();
+      batch.set(db.collection('families').doc(uid), {
+        inviteCode: code,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      batch.set(db.collection('familyCodes').doc(code), { familyId: uid });
+      batch.set(db.collection('users').doc(uid), { familyId: uid });
+      await batch.commit();
+      familyId = uid;
+      document.getElementById('inviteCodeDisplay').textContent = code;
+      document.getElementById('familySetupCard').style.display  = 'none';
+      document.getElementById('codeDisplayCard').style.display  = 'block';
+    }
+
+    async function joinFamily() {
+      const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+      if (code.length !== 6) { showFamilyMsg('6桁のコードを入力してください', 'error'); return; }
+      showFamilyMsg('確認中...', 'info');
+      try {
+        const snap = await db.collection('familyCodes').doc(code).get();
+        if (!snap.exists) { showFamilyMsg('コードが見つかりません', 'error'); return; }
+        const fid = snap.data().familyId;
+        await db.collection('users').doc(currentUser.uid).set({ familyId: fid });
+        familyId = fid;
+        proceedToApp();
+      } catch (e) { showFamilyMsg('エラーが発生しました', 'error'); }
+    }
+
+    function generateCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
+
+    function showFamilyMsg(msg, type) {
+      const el = document.getElementById('familyMsg');
+      el.textContent = msg;
+      el.className = `family-msg ${type}`;
+    }
+
+    function proceedToApp() {
+      document.getElementById('familyScreen').style.display = 'none';
+      startApp();
+    }
+
+    async function startApp() {
+      document.getElementById('authScreen').style.display  = 'none';
+      document.getElementById('familyScreen').style.display = 'none';
+
+      // One-time migration from localStorage → Firestore
+      const MIGRATED_KEY = 'baby-care-migrated-firestore-v1';
+      if (!localStorage.getItem(MIGRATED_KEY)) {
+        const existing = await logsCol().limit(1).get();
+        if (existing.empty) {
+          const oldLogs  = JSON.parse(localStorage.getItem('baby-care-logs') || '[]');
+          const oldName  = localStorage.getItem('baby-care-name');
+          const oldSleep = localStorage.getItem('baby-care-active-sleep');
+          if (oldLogs.length > 0 || oldName || oldSleep) {
+            const batch = db.batch();
+            for (const l of oldLogs) batch.set(logsCol().doc(), l);
+            if (oldName)  batch.set(settingsDoc('baby-name'),    { value: oldName });
+            if (oldSleep) batch.set(settingsDoc('active-sleep'), { value: oldSleep });
+            await batch.commit();
+          }
+        }
+        localStorage.setItem(MIGRATED_KEY, '1');
+      }
+
+      // Load settings
+      const [nameDoc, sleepDoc] = await Promise.all([
+        settingsDoc('baby-name').get(),
+        settingsDoc('active-sleep').get()
+      ]);
+      babyName    = nameDoc.exists  ? nameDoc.data().value  : '';
+      activeSleep = sleepDoc.exists ? JSON.parse(sleepDoc.data().value) : null;
+
+      updateHeaderName();
+      updateSleepButton();
+      if (activeSleep) sleepTimer = setInterval(updateSleepButton, 30000);
+
+      // Real-time listener
+      if (unsubscribeListener) unsubscribeListener();
+      unsubscribeListener = logsCol().orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+        logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderLogs();
+        renderStats();
+        if (selectedCalDate) renderCalendar();
+      });
     }
 
     // ── Theme ─────────────────────────────────────────────
@@ -1218,48 +1465,26 @@
     }
 
     // ── Init ──────────────────────────────────────────────
-    (async function init() {
+    (function init() {
       const theme = localStorage.getItem(THEME_KEY) || 'light';
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
 
-      // One-time migration from localStorage → Firestore
-      const MIGRATED_KEY = 'baby-care-migrated-firestore-v1';
-      if (!localStorage.getItem(MIGRATED_KEY)) {
-        const existing = await db.collection('logs').limit(1).get();
-        if (existing.empty) {
-          const oldLogs  = JSON.parse(localStorage.getItem('baby-care-logs') || '[]');
-          const oldName  = localStorage.getItem('baby-care-name');
-          const oldSleep = localStorage.getItem('baby-care-active-sleep');
-          if (oldLogs.length > 0 || oldName || oldSleep) {
-            const batch = db.batch();
-            for (const l of oldLogs) batch.set(db.collection('logs').doc(), l);
-            if (oldName)  batch.set(db.collection('settings').doc('baby-name'),    { value: oldName });
-            if (oldSleep) batch.set(db.collection('settings').doc('active-sleep'), { value: oldSleep });
-            await batch.commit();
-          }
+      firebase.auth().onAuthStateChanged(async user => {
+        currentUser = user;
+        if (!user) {
+          document.getElementById('authScreen').style.display  = 'flex';
+          document.getElementById('familyScreen').style.display = 'none';
+          return;
         }
-        localStorage.setItem(MIGRATED_KEY, '1');
-      }
-
-      // 設定（名前・睡眠中フラグ）を取得
-      const [nameDoc, sleepDoc] = await Promise.all([
-        db.collection('settings').doc('baby-name').get(),
-        db.collection('settings').doc('active-sleep').get()
-      ]);
-      babyName    = nameDoc.exists  ? nameDoc.data().value  : '';
-      activeSleep = sleepDoc.exists ? JSON.parse(sleepDoc.data().value) : null;
-
-      updateHeaderName();
-      updateSleepButton();
-      if (activeSleep) sleepTimer = setInterval(updateSleepButton, 30000);
-
-      // リアルタイムリスナー — 自分の書き込みも相手の書き込みも即反映
-      db.collection('logs').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-        logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderLogs();
-        renderStats();
-        if (selectedCalDate) renderCalendar();
+        document.getElementById('authScreen').style.display = 'none';
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (!userDoc.exists || !userDoc.data().familyId) {
+          document.getElementById('familyScreen').style.display = 'flex';
+          return;
+        }
+        familyId = userDoc.data().familyId;
+        startApp();
       });
     })();
   </script>
