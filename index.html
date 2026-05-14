@@ -768,7 +768,6 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    db.enablePersistence().catch(() => {}); // オフラインでもキャッシュで動作
 
     // In-memory state backed by Firestore
     let logs        = [];
@@ -1486,13 +1485,19 @@
           return;
         }
         document.getElementById('authScreen').style.display = 'none';
-        const userDoc = await db.collection('users').doc(user.uid).get();
-        if (!userDoc.exists || !userDoc.data().familyId) {
-          document.getElementById('familyScreen').style.display = 'flex';
-          return;
+        try {
+          const userDoc = await db.collection('users').doc(user.uid).get();
+          if (!userDoc.exists || !userDoc.data().familyId) {
+            document.getElementById('familyScreen').style.display = 'flex';
+            return;
+          }
+          familyId = userDoc.data().familyId;
+          startApp();
+        } catch (err) {
+          console.error('Firestore error:', err);
+          // エラー時はログアウトして再ログイン画面へ
+          firebase.auth().signOut();
         }
-        familyId = userDoc.data().familyId;
-        startApp();
       });
     })();
   </script>
