@@ -621,10 +621,27 @@
     </div>
   </div>
 
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <script>
     const THEME_KEY = 'baby-care-theme';
 
-    // In-memory state backed by SQLite
+    // ── Firebase ──────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey:            "AIzaSyCQKF7rJM9EJYOZj_rfRZzrOI8UPLBM3AM",
+      authDomain:        "ikuzi-log.firebaseapp.com",
+      projectId:         "ikuzi-log",
+      storageBucket:     "ikuzi-log.firebasestorage.app",
+      messagingSenderId: "539608977859",
+      appId:             "1:539608977859:web:ebcec39306971c323ded76"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    db.enablePersistence().catch(() => {}); // オフラインでもキャッシュで動作
+
+    // In-memory state backed by Firestore
     let logs        = [];
     let activeSleep = null;
     let babyName    = '';
@@ -647,28 +664,14 @@
     let pastCondId      = null;
     let pastCondText    = null;
 
-    // ── API helpers ───────────────────────────────────────
-    async function apiPost(url, body) {
-      const res = await fetch(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      return res.json();
-    }
-
-    async function apiAddLog(entry) {
-      const { id } = await apiPost('/api/logs', entry);
-      entry.id = id;
-    }
-
-    // ── Storage (SQLite-backed) ───────────────────────────
+    // ── Firestore helpers ─────────────────────────────────
     function loadLogs() { return logs; }
 
     function getActiveSleep() { return activeSleep; }
     function setActiveSleep(d) {
       activeSleep = d;
-      if (d === null) fetch('/api/settings/active-sleep', { method: 'DELETE' });
-      else apiPost('/api/settings/active-sleep', { value: JSON.stringify(d) });
+      if (d === null) db.collection('settings').doc('active-sleep').delete();
+      else db.collection('settings').doc('active-sleep').set({ value: JSON.stringify(d) });
     }
 
     function getBabyName() { return babyName; }
@@ -729,7 +732,7 @@
         ? `<span class="log-sub">${subParts.join('　·　')}</span>` : '';
 
       const deleteBtn = withDelete
-        ? `<button class="delete-btn" onclick="deleteLog(${log.id})" title="削除">✕</button>` : '';
+        ? `<button class="delete-btn" onclick="deleteLog('${log.id}')" title="削除">✕</button>` : '';
 
       const li = document.createElement('li');
       li.className = 'log-item';
@@ -776,35 +779,28 @@
     function deleteLog(id) {
       const idx = logs.findIndex(l => l.id === id);
       if (idx !== -1) logs.splice(idx, 1);
-      fetch(`/api/logs/${id}`, { method: 'DELETE' });
-      renderLogs();
-      renderStats();
+      renderLogs(); renderStats();
       if (selectedCalDate) renderCalendar();
+      db.collection('logs').doc(id).delete();
     }
 
     // ── Sleep ─────────────────────────────────────────────
-    async function handleSleep() {
+    function handleSleep() {
       const active = getActiveSleep();
       const now = new Date();
       if (active) {
         const duration = Math.round((now - new Date(active.timestamp)) / 60000);
-        const entry = { type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
-                        duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() };
-        logs.unshift(entry);
         setActiveSleep(null);
         clearInterval(sleepTimer); sleepTimer = null;
         updateSleepButton();
-        await apiAddLog(entry);
-        renderLogs(); renderStats();
+        db.collection('logs').add({ type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
+                                    duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() });
       } else {
-        const entry = { type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
-                        displayTime: nowDisplayTime(), timestamp: now.toISOString() };
-        logs.unshift(entry);
         setActiveSleep({ timestamp: now.toISOString() });
         sleepTimer = setInterval(updateSleepButton, 30000);
         updateSleepButton();
-        await apiAddLog(entry);
-        renderLogs(); renderStats();
+        db.collection('logs').add({ type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
+                                    displayTime: nowDisplayTime(), timestamp: now.toISOString() });
       }
     }
 
@@ -841,7 +837,7 @@
       document.getElementById('milkAmountSection').style.display = type === 'milk' ? 'block' : 'none';
       document.getElementById('btnNursingConfirm').disabled = false;
     }
-    async function confirmNursing() {
+    function confirmNursing() {
       if (!selectedNursingType) return;
       let label, icon = '🍼';
       if (selectedNursingType === 'right') { label = '授乳 — 右おっぱい'; }
@@ -851,12 +847,9 @@
         const ml = parseInt(document.getElementById('milkAmount').value, 10);
         label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
       }
-      const entry = { type:'nursing', subtype:selectedNursingType, label, icon,
-                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() };
-      logs.unshift(entry);
       closeNursingModal();
-      await apiAddLog(entry);
-      renderLogs(); renderStats();
+      db.collection('logs').add({ type:'nursing', subtype:selectedNursingType, label, icon,
+                                  displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
     }
 
     // ── Diaper Modal ──────────────────────────────────────
@@ -883,19 +876,16 @@
       document.querySelectorAll('[id^="cond-"]').forEach(b => b.classList.remove('selected'));
       document.getElementById(`cond-${id}`).classList.add('selected');
     }
-    async function confirmDiaper() {
+    function confirmDiaper() {
       if (!selectedDiaperType) return;
       const isPee = selectedDiaperType === 'pee';
       const memo  = document.getElementById('diaperMemo').value.trim() || null;
-      const entry = { type:'diaper', subtype:selectedDiaperType,
-                      conditionText: selectedCondText, memo,
-                      label: isPee ? 'おしっこ' : 'うんち',
-                      icon:  isPee ? '💧' : '💩',
-                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() };
-      logs.unshift(entry);
       closeDiaperModal();
-      await apiAddLog(entry);
-      renderLogs(); renderStats();
+      db.collection('logs').add({ type:'diaper', subtype:selectedDiaperType,
+                                  conditionText: selectedCondText, memo,
+                                  label: isPee ? 'おしっこ' : 'うんち',
+                                  icon:  isPee ? '💧' : '💩',
+                                  displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
     }
 
     // ── Baby Name Modal ───────────────────────────────────
@@ -908,8 +898,8 @@
     function saveBabyName() {
       const name = document.getElementById('babyNameInput').value.trim();
       babyName = name;
-      if (name) apiPost('/api/settings/baby-name', { value: name });
-      else fetch('/api/settings/baby-name', { method: 'DELETE' });
+      if (name) db.collection('settings').doc('baby-name').set({ value: name });
+      else db.collection('settings').doc('baby-name').delete();
       updateHeaderName();
       closeNameModal();
     }
@@ -1162,7 +1152,7 @@
       document.getElementById('btnPastConfirm').disabled = !ok;
     }
 
-    async function confirmPast() {
+    function confirmPast() {
       if (!pastCategory || !pastModalDate) return;
       const { year, month, day } = pastModalDate;
       const newLogs = [];
@@ -1215,13 +1205,8 @@
       }
 
       if (newLogs.length === 0) return;
-      newLogs.forEach(l => logs.push(l));
-      logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       closePastModal();
-      await Promise.all(newLogs.map(apiAddLog));
-      renderLogs();
-      renderStats();
-      renderCalendar();
+      newLogs.forEach(l => db.collection('logs').add(l));
     }
 
     // ── Theme ─────────────────────────────────────────────
@@ -1238,37 +1223,44 @@
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
 
-      // One-time migration from localStorage to SQLite
-      const MIGRATED_KEY = 'baby-care-migrated-v1';
+      // One-time migration from localStorage → Firestore
+      const MIGRATED_KEY = 'baby-care-migrated-firestore-v1';
       if (!localStorage.getItem(MIGRATED_KEY)) {
-        const oldLogs  = JSON.parse(localStorage.getItem('baby-care-logs') || '[]');
-        const oldName  = localStorage.getItem('baby-care-name');
-        const oldSleep = localStorage.getItem('baby-care-active-sleep');
-        if (oldLogs.length > 0 || oldName || oldSleep) {
-          await apiPost('/api/migrate', {
-            logs: oldLogs,
-            name: oldName || null,
-            activeSleep: oldSleep ? JSON.parse(oldSleep) : null
-          });
+        const existing = await db.collection('logs').limit(1).get();
+        if (existing.empty) {
+          const oldLogs  = JSON.parse(localStorage.getItem('baby-care-logs') || '[]');
+          const oldName  = localStorage.getItem('baby-care-name');
+          const oldSleep = localStorage.getItem('baby-care-active-sleep');
+          if (oldLogs.length > 0 || oldName || oldSleep) {
+            const batch = db.batch();
+            for (const l of oldLogs) batch.set(db.collection('logs').doc(), l);
+            if (oldName)  batch.set(db.collection('settings').doc('baby-name'),    { value: oldName });
+            if (oldSleep) batch.set(db.collection('settings').doc('active-sleep'), { value: oldSleep });
+            await batch.commit();
+          }
         }
         localStorage.setItem(MIGRATED_KEY, '1');
       }
 
-      // Load all data from SQLite
-      const [logsData, nameData, sleepData] = await Promise.all([
-        fetch('/api/logs').then(r => r.json()),
-        fetch('/api/settings/baby-name').then(r => r.json()),
-        fetch('/api/settings/active-sleep').then(r => r.json())
+      // 設定（名前・睡眠中フラグ）を取得
+      const [nameDoc, sleepDoc] = await Promise.all([
+        db.collection('settings').doc('baby-name').get(),
+        db.collection('settings').doc('active-sleep').get()
       ]);
-      logs        = logsData;
-      babyName    = nameData.value || '';
-      activeSleep = sleepData.value ? JSON.parse(sleepData.value) : null;
+      babyName    = nameDoc.exists  ? nameDoc.data().value  : '';
+      activeSleep = sleepDoc.exists ? JSON.parse(sleepDoc.data().value) : null;
 
       updateHeaderName();
       updateSleepButton();
       if (activeSleep) sleepTimer = setInterval(updateSleepButton, 30000);
-      renderLogs();
-      renderStats();
+
+      // リアルタイムリスナー — 自分の書き込みも相手の書き込みも即反映
+      db.collection('logs').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+        logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderLogs();
+        renderStats();
+        if (selectedCalDate) renderCalendar();
+      });
     })();
   </script>
 
