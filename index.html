@@ -426,6 +426,28 @@
       color: #e07090; font-weight: bold; cursor: pointer;
       font-family: inherit; margin-top: 4px;
     }
+    /* ── Data tab ── */
+    .data-section { padding: 16px 16px 32px; }
+    .data-period-label {
+      font-size: 0.78rem; color: var(--sub-txt); margin-bottom: 12px;
+      font-weight: 600; letter-spacing: 0.05em;
+    }
+    .data-summary-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .data-card {
+      background: var(--bg-card); border-radius: 16px; padding: 14px 6px;
+      text-align: center; box-shadow: 0 2px 8px rgba(200,140,160,0.10);
+    }
+    .data-card-icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .data-card-value { font-size: 1.6rem; font-weight: bold; color: var(--label-txt); line-height: 1.1; }
+    .data-card-unit { font-size: 0.68rem; color: var(--sub-txt); margin-bottom: 2px; }
+    .data-card-name { font-size: 0.7rem; color: var(--sub-txt); }
+    .chart-section {
+      background: var(--bg-card); border-radius: 16px; padding: 14px;
+      margin-bottom: 16px; box-shadow: 0 2px 8px rgba(200,140,160,0.10);
+    }
+    .chart-title { font-size: 0.85rem; font-weight: bold; color: var(--label-txt); margin-bottom: 10px; }
+    .chart-canvas { width: 100%; display: block; }
+
     /* ── Snackbar (undo delete) ── */
     .snackbar {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
@@ -457,6 +479,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="record"   onclick="switchTab('record')">📝 記録</button>
     <button class="tab-btn"        data-tab="calendar" onclick="switchTab('calendar')">📅 カレンダー</button>
+    <button class="tab-btn"        data-tab="data"     onclick="switchTab('data')">📊 データ</button>
   </div>
 
   <!-- ── Tab: Record ── -->
@@ -521,6 +544,46 @@
 
       <div id="dayDetail">
         <div class="cal-placeholder">📅 日付をタップするときろくを確認できます</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Data ── -->
+  <div id="tab-data" class="tab-content">
+    <div class="data-section">
+      <div class="data-period-label">📊 過去7日間のサマリー</div>
+      <div class="data-summary-cards">
+        <div class="data-card">
+          <div class="data-card-icon">🍼</div>
+          <div class="data-card-value" id="dataTotalNursing">—</div>
+          <div class="data-card-unit">回</div>
+          <div class="data-card-name">授乳合計</div>
+        </div>
+        <div class="data-card">
+          <div class="data-card-icon">🌙</div>
+          <div class="data-card-value" id="dataAvgSleep">—</div>
+          <div class="data-card-unit">時間/日</div>
+          <div class="data-card-name">平均睡眠</div>
+        </div>
+        <div class="data-card">
+          <div class="data-card-icon">🌿</div>
+          <div class="data-card-value" id="dataTotalDiaper">—</div>
+          <div class="data-card-unit">回</div>
+          <div class="data-card-name">おむつ合計</div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-title">🍼 授乳回数（日別）</div>
+        <canvas id="chartNursing" class="chart-canvas"></canvas>
+      </div>
+      <div class="chart-section">
+        <div class="chart-title">🌙 睡眠時間（日別・時間）</div>
+        <canvas id="chartSleep" class="chart-canvas"></canvas>
+      </div>
+      <div class="chart-section">
+        <div class="chart-title">🌿 おむつ交換回数（日別）</div>
+        <canvas id="chartDiaper" class="chart-canvas"></canvas>
       </div>
     </div>
   </div>
@@ -871,6 +934,126 @@
       document.getElementById(`tab-${name}`).classList.add('active');
       document.querySelector(`[data-tab="${name}"]`).classList.add('active');
       if (name === 'calendar') renderCalendar();
+      if (name === 'data') renderDataTab();
+    }
+
+    // ── Data tab ──────────────────────────────────────────
+    function renderDataTab() {
+      const today = new Date();
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        days.push(d);
+      }
+
+      const nursingArr  = days.map(() => 0);
+      const diaperArr   = days.map(() => 0);
+      const sleepMinArr = days.map(() => 0);
+
+      for (const log of logs) {
+        const ld = new Date(log.timestamp);
+        const idx = days.findIndex(d =>
+          d.getFullYear() === ld.getFullYear() &&
+          d.getMonth()    === ld.getMonth()    &&
+          d.getDate()     === ld.getDate()
+        );
+        if (idx === -1) continue;
+        if (log.type === 'nursing') nursingArr[idx]++;
+        if (log.type === 'diaper')  diaperArr[idx]++;
+        if (log.type === 'sleep' && log.subtype === 'end' && log.duration)
+          sleepMinArr[idx] += log.duration;
+      }
+
+      const totalNursing = nursingArr.reduce((a, b) => a + b, 0);
+      const totalSleepH  = sleepMinArr.reduce((a, b) => a + b, 0) / 60;
+      const avgSleepH    = totalSleepH / 7;
+      const totalDiaper  = diaperArr.reduce((a, b) => a + b, 0);
+
+      document.getElementById('dataTotalNursing').textContent = totalNursing;
+      document.getElementById('dataAvgSleep').textContent     = avgSleepH.toFixed(1);
+      document.getElementById('dataTotalDiaper').textContent  = totalDiaper;
+
+      const labels = days.map(d => `${d.getMonth()+1}/${d.getDate()}`);
+      const sleepH = sleepMinArr.map(m => parseFloat((m / 60).toFixed(1)));
+
+      requestAnimationFrame(() => {
+        drawBarChart('chartNursing', labels, nursingArr, '#ff8fab');
+        drawBarChart('chartSleep',   labels, sleepH,     '#7eb6d4');
+        drawBarChart('chartDiaper',  labels, diaperArr,  '#7ec89a');
+      });
+    }
+
+    function drawBarChart(canvasId, labels, values, color) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const W   = canvas.parentElement.clientWidth - 28;
+      const H   = 160;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor  = isDark ? '#3a3a4a' : '#ececec';
+      const labelColor = isDark ? '#888'    : '#aaa';
+      const valueColor = isDark ? '#bbb'    : '#555';
+
+      const maxVal = Math.max(...values, 0.1);
+      const n      = labels.length;
+      const padL = 28, padR = 6, padT = 18, padB = 30;
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+      const gap    = chartW / n;
+      const barW   = gap * 0.55;
+
+      // Grid lines + y-labels
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= 4; i++) {
+        const y    = padT + chartH - (chartH * i / 4);
+        const yVal = maxVal * i / 4;
+        ctx.strokeStyle = gridColor;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke();
+        ctx.fillStyle  = labelColor;
+        ctx.font       = `${9 * dpr / dpr}px sans-serif`;
+        ctx.textAlign  = 'right';
+        ctx.fillText(yVal < 1 ? yVal.toFixed(1) : Math.round(yVal), padL - 4, y + 3);
+      }
+
+      // Bars
+      values.forEach((v, i) => {
+        const x    = padL + gap * i + (gap - barW) / 2;
+        const barH = v === 0 ? 0 : Math.max(3, (v / maxVal) * chartH);
+        const y    = padT + chartH - barH;
+        const r    = Math.min(5, barW / 2);
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + barW - r, y);
+        ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+        ctx.lineTo(x + barW, padT + chartH);
+        ctx.lineTo(x, padT + chartH);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        ctx.fill();
+
+        if (v > 0) {
+          ctx.fillStyle  = valueColor;
+          ctx.font       = `bold 9px sans-serif`;
+          ctx.textAlign  = 'center';
+          ctx.fillText(v % 1 === 0 ? v : v.toFixed(1), x + barW / 2, y - 3);
+        }
+
+        ctx.fillStyle = labelColor;
+        ctx.font      = '9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(labels[i], x + barW / 2, H - padB + 14);
+      });
     }
 
     // ── Render: log items (shared renderer) ──────────────
