@@ -760,7 +760,7 @@
     // ── Firebase ──────────────────────────────────────────
     const firebaseConfig = {
       apiKey:            "AIzaSyCQKF7rJM9EJYOZj_rfRZzrOI8UPLBM3AM",
-      authDomain:        "ikuzi-log.firebaseapp.com",
+      authDomain:        "ikuzi-log.web.app",
       projectId:         "ikuzi-log",
       storageBucket:     "ikuzi-log.firebasestorage.app",
       messagingSenderId: "539608977859",
@@ -1467,15 +1467,17 @@
     }
 
     // ── Init ──────────────────────────────────────────────
-    (function init() {
+    (async function init() {
       const theme = localStorage.getItem(THEME_KEY) || 'light';
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
 
-      // signInWithRedirect のリダイレクト結果を処理
-      firebase.auth().getRedirectResult().catch(err => {
-        if (err.code !== 'auth/no-current-user') console.error('Redirect error:', err);
-      });
+      // リダイレクト結果を先に処理してから onAuthStateChanged を設定
+      try {
+        await firebase.auth().getRedirectResult();
+      } catch (err) {
+        console.error('Redirect result error:', err);
+      }
 
       firebase.auth().onAuthStateChanged(async user => {
         currentUser = user;
@@ -1486,6 +1488,7 @@
         }
         document.getElementById('authScreen').style.display = 'none';
         try {
+          await user.getIdToken(true); // Firestore にトークンが届く前に強制更新
           const userDoc = await db.collection('users').doc(user.uid).get();
           if (!userDoc.exists || !userDoc.data().familyId) {
             document.getElementById('familyScreen').style.display = 'flex';
@@ -1495,8 +1498,9 @@
           startApp();
         } catch (err) {
           console.error('Firestore error:', err);
-          // エラー時はログアウトして再ログイン画面へ
-          firebase.auth().signOut();
+          document.getElementById('familyScreen').style.display = 'flex';
+          const msgEl = document.getElementById('familyMsg');
+          if (msgEl) { msgEl.textContent = 'データ読込エラー。再度お試しください。'; msgEl.className = 'family-msg error'; }
         }
       });
     })();
