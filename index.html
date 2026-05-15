@@ -426,6 +426,43 @@
       color: #e07090; font-weight: bold; cursor: pointer;
       font-family: inherit; margin-top: 4px;
     }
+
+    /* ── Re-login Dialog ── */
+    .relogin-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .relogin-backdrop.open { display: flex; }
+    .relogin-card {
+      background: var(--bg-card); border-radius: 24px;
+      padding: 36px 28px 32px; width: 100%; max-width: 340px;
+      text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+      animation: fadeIn 0.25s ease;
+    }
+    .relogin-icon  { font-size: 2.5rem; margin-bottom: 12px; }
+    .relogin-title { font-size: 1.1rem; font-weight: bold; color: var(--label-txt); margin-bottom: 10px; }
+    .relogin-sub   { font-size: 0.82rem; color: var(--sub-txt); line-height: 1.7; margin-bottom: 24px; }
+
+    /* ── Offline Banner ── */
+    .offline-banner {
+      display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1500;
+      background: #ff9f43; color: white; text-align: center;
+      padding: 10px 16px; font-size: 0.82rem; font-weight: bold;
+      letter-spacing: 0.03em; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .offline-banner.show { display: block; }
+
+    /* ── Error Toast ── */
+    .error-toast {
+      position: fixed; bottom: 88px; left: 16px; right: 16px; z-index: 300;
+      background: #e07090; color: white; border-radius: 14px;
+      padding: 14px 16px; font-size: 0.85rem; text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .error-toast.show { opacity: 1; pointer-events: auto; }
+
     /* ── Data tab ── */
     .data-section { padding: 16px 16px 32px; }
     .data-period-label {
@@ -522,7 +559,7 @@
     </div>
 
     <div class="log-section">
-      <div class="log-header"><h2>📋 きろく一覧</h2></div>
+      <div class="log-header"><h2>📋 本日の記録一覧</h2></div>
       <ul class="log-list" id="logList"></ul>
     </div>
   </div>
@@ -833,6 +870,29 @@
     <button class="snackbar-undo" onclick="undoDelete()">取り消し</button>
   </div>
 
+  <!-- Re-login Dialog -->
+  <div id="reloginBackdrop" class="relogin-backdrop">
+    <div class="relogin-card">
+      <div class="relogin-icon">🔒</div>
+      <div class="relogin-title" id="reloginTitle">セッションが切れました</div>
+      <div class="relogin-sub" id="reloginSub">
+        しばらく操作がなかったため、ログインが切れました。<br>もう一度ログインしてください。
+      </div>
+      <button class="btn-google" onclick="reloginWithGoogle()">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Googleで再ログイン
+      </button>
+    </div>
+  </div>
+
+  <!-- Offline Banner -->
+  <div id="offlineBanner" class="offline-banner">
+    📡 オフライン中 — ネットワーク接続を確認してください
+  </div>
+
+  <!-- Error Toast -->
+  <div id="errorToast" class="error-toast"></div>
+
   <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -863,6 +923,8 @@
     let unsubscribeListener = null;
     let pendingDelete       = null;
     let snackbarTimer       = null;
+    let wasLoggedIn         = false;
+    let errorToastTimer     = null;
 
     let sleepTimer          = null;
     let selectedNursingType = null;
@@ -899,6 +961,68 @@
     function updateHeaderName() {
       const name = getBabyName() || '赤ちゃん';
       document.getElementById('headerName').textContent = name;
+    }
+
+    // ── Error / Session Handling ──────────────────────────
+    function showReloginDialog(title, sub) {
+      document.getElementById('reloginTitle').textContent =
+        title || 'セッションが切れました';
+      document.getElementById('reloginSub').innerHTML =
+        sub || 'しばらく操作がなかったため、ログインが切れました。<br>もう一度ログインしてください。';
+      document.getElementById('reloginBackdrop').classList.add('open');
+    }
+
+    function reloginWithGoogle() {
+      document.getElementById('reloginBackdrop').classList.remove('open');
+      const errEl = document.getElementById('authErrorMsg');
+      if (errEl) errEl.textContent = '';
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider).catch(err => {
+        if (err.code === 'auth/popup-blocked' ||
+            err.code === 'auth/popup-closed-by-user' ||
+            err.code === 'auth/cancelled-popup-request') return;
+        if (err.code === 'auth/operation-not-supported-in-this-environment') {
+          firebase.auth().signInWithRedirect(provider);
+          return;
+        }
+        showReloginDialog('ログインに失敗しました', `エラー: ${err.code}<br>もう一度お試しください。`);
+      });
+    }
+
+    function showErrorToast(msg) {
+      clearTimeout(errorToastTimer);
+      const el = document.getElementById('errorToast');
+      el.textContent = msg;
+      el.classList.add('show');
+      errorToastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+    }
+
+    function handleFirestoreError(err) {
+      console.error('Firestore error:', err);
+      if (err.code === 'permission-denied' || err.code === 'unauthenticated') {
+        showReloginDialog('ログインが必要です',
+          'データへのアクセス権がありません。<br>もう一度ログインしてください。');
+      } else if (!navigator.onLine) {
+        // オフラインバナーで案内済み
+      } else {
+        showErrorToast('保存できませんでした。しばらくしてから再試行してください。');
+      }
+    }
+
+    async function safeAdd(data) {
+      try {
+        return await logsCol().add(data);
+      } catch (err) {
+        handleFirestoreError(err);
+      }
+    }
+
+    async function safeDelete(id) {
+      try {
+        await logsCol().doc(id).delete();
+      } catch (err) {
+        handleFirestoreError(err);
+      }
     }
 
     // ── Helpers ───────────────────────────────────────────
@@ -1091,14 +1215,15 @@
 
     // ── Render: record tab log list ───────────────────────
     function renderLogs() {
-      const logs = loadLogs();
+      const today = new Date().toDateString();
+      const todayLogs = loadLogs().filter(l => new Date(l.timestamp).toDateString() === today);
       const list = document.getElementById('logList');
       list.innerHTML = '';
-      if (logs.length === 0) {
-        list.innerHTML = `<li class="empty"><span class="empty-icon">👶</span>まだ記録がありません<br>ボタンを押して記録しましょう</li>`;
+      if (todayLogs.length === 0) {
+        list.innerHTML = `<li class="empty"><span class="empty-icon">👶</span>今日の記録はまだありません<br>ボタンを押して記録しましょう</li>`;
         return;
       }
-      logs.forEach((log, i) => list.appendChild(buildLogItem(log, i, true)));
+      todayLogs.forEach((log, i) => list.appendChild(buildLogItem(log, i, true)));
     }
 
     // ── Render: stats ─────────────────────────────────────
@@ -1130,7 +1255,7 @@
 
     function commitDelete() {
       if (!pendingDelete) return;
-      logsCol().doc(pendingDelete.id).delete();
+      safeDelete(pendingDelete.id);
       pendingDelete = null;
     }
 
@@ -1165,14 +1290,14 @@
         setActiveSleep(null);
         clearInterval(sleepTimer); sleepTimer = null;
         updateSleepButton();
-        logsCol().add({ type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
-                        duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() });
+        safeAdd({ type:'sleep', subtype:'end', label:'起きた', icon:'☀️',
+                  duration, displayTime: nowDisplayTime(), timestamp: now.toISOString() });
       } else {
         setActiveSleep({ timestamp: now.toISOString() });
         sleepTimer = setInterval(updateSleepButton, 30000);
         updateSleepButton();
-        logsCol().add({ type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
-                        displayTime: nowDisplayTime(), timestamp: now.toISOString() });
+        safeAdd({ type:'sleep', subtype:'start', label:'ねんね開始', icon:'🌙',
+                  displayTime: nowDisplayTime(), timestamp: now.toISOString() });
       }
     }
 
@@ -1220,8 +1345,8 @@
         label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
       }
       closeNursingModal();
-      logsCol().add({ type:'nursing', subtype:selectedNursingType, label, icon,
-                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
+      safeAdd({ type:'nursing', subtype:selectedNursingType, label, icon,
+                displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
     }
 
     // ── Diaper Modal ──────────────────────────────────────
@@ -1253,11 +1378,11 @@
       const isPee = selectedDiaperType === 'pee';
       const memo  = document.getElementById('diaperMemo').value.trim() || null;
       closeDiaperModal();
-      logsCol().add({ type:'diaper', subtype:selectedDiaperType,
-                      conditionText: selectedCondText, memo,
-                      label: isPee ? 'おしっこ' : 'うんち',
-                      icon:  isPee ? '💧' : '💩',
-                      displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
+      safeAdd({ type:'diaper', subtype:selectedDiaperType,
+                conditionText: selectedCondText, memo,
+                label: isPee ? 'おしっこ' : 'うんち',
+                icon:  isPee ? '💧' : '💩',
+                displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
     }
 
     // ── Account Modal ─────────────────────────────────────
@@ -1265,9 +1390,14 @@
       document.getElementById('babyNameInput').value = getBabyName();
       // Show family code
       if (familyId) {
-        db.collection('families').doc(familyId).get().then(doc => {
-          if (doc.exists) document.getElementById('accountCodeDisplay').textContent = doc.data().inviteCode || '------';
-        });
+        db.collection('families').doc(familyId).get()
+          .then(doc => {
+            if (doc.exists) document.getElementById('accountCodeDisplay').textContent = doc.data().inviteCode || '------';
+          })
+          .catch(err => {
+            console.error('accountModal fetch error:', err);
+            document.getElementById('accountCodeDisplay').textContent = '取得失敗';
+          });
       }
       document.getElementById('accountModal').classList.add('open');
       setTimeout(() => document.getElementById('babyNameInput').focus(), 300);
@@ -1276,8 +1406,8 @@
     function saveBabyName() {
       const name = document.getElementById('babyNameInput').value.trim();
       babyName = name;
-      if (name) settingsDoc('baby-name').set({ value: name });
-      else settingsDoc('baby-name').delete();
+      const op = name ? settingsDoc('baby-name').set({ value: name }) : settingsDoc('baby-name').delete();
+      op.catch(err => handleFirestoreError(err));
       updateHeaderName();
       closeAccountModal();
     }
@@ -1584,7 +1714,7 @@
 
       if (newLogs.length === 0) return;
       closePastModal();
-      newLogs.forEach(l => logsCol().add(l));
+      newLogs.forEach(l => safeAdd(l));
     }
 
     // ── Auth & Family ─────────────────────────────────────
@@ -1614,6 +1744,7 @@
     }
 
     function handleSignOut() {
+      wasLoggedIn = false;
       if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
       logs = []; activeSleep = null; babyName = ''; familyId = null;
       closeAccountModal();
@@ -1621,20 +1752,31 @@
     }
 
     async function createFamily() {
-      const code = generateCode();
-      const uid  = currentUser.uid;
-      const batch = db.batch();
-      batch.set(db.collection('families').doc(uid), {
-        inviteCode: code,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      batch.set(db.collection('familyCodes').doc(code), { familyId: uid });
-      batch.set(db.collection('users').doc(uid), { familyId: uid });
-      await batch.commit();
-      familyId = uid;
-      document.getElementById('inviteCodeDisplay').textContent = code;
-      document.getElementById('familySetupCard').style.display  = 'none';
-      document.getElementById('codeDisplayCard').style.display  = 'block';
+      showFamilyMsg('作成中...', 'info');
+      try {
+        const code = generateCode();
+        const uid  = currentUser.uid;
+        const batch = db.batch();
+        batch.set(db.collection('families').doc(uid), {
+          inviteCode: code,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        batch.set(db.collection('familyCodes').doc(code), { familyId: uid });
+        batch.set(db.collection('users').doc(uid), { familyId: uid });
+        await batch.commit();
+        familyId = uid;
+        document.getElementById('inviteCodeDisplay').textContent = code;
+        document.getElementById('familySetupCard').style.display  = 'none';
+        document.getElementById('codeDisplayCard').style.display  = 'block';
+      } catch (err) {
+        console.error('createFamily error:', err);
+        if (err.code === 'permission-denied' || err.code === 'unauthenticated') {
+          showReloginDialog('ログインが必要です',
+            '認証エラーが発生しました。<br>もう一度ログインしてください。');
+        } else {
+          showFamilyMsg('作成に失敗しました。もう一度お試しください。', 'error');
+        }
+      }
     }
 
     async function joinFamily() {
@@ -1648,7 +1790,15 @@
         await db.collection('users').doc(currentUser.uid).set({ familyId: fid });
         familyId = fid;
         proceedToApp();
-      } catch (e) { showFamilyMsg('エラーが発生しました', 'error'); }
+      } catch (e) {
+        console.error('joinFamily error:', e);
+        if (e.code === 'permission-denied' || e.code === 'unauthenticated') {
+          showReloginDialog('ログインが必要です',
+            '認証エラーが発生しました。<br>もう一度ログインしてください。');
+        } else {
+          showFamilyMsg('参加に失敗しました。ネットワークを確認してください。', 'error');
+        }
+      }
     }
 
     function generateCode() {
@@ -1674,29 +1824,42 @@
       // One-time migration from localStorage → Firestore
       const MIGRATED_KEY = 'baby-care-migrated-firestore-v1';
       if (!localStorage.getItem(MIGRATED_KEY)) {
-        const existing = await logsCol().limit(1).get();
-        if (existing.empty) {
-          const oldLogs  = JSON.parse(localStorage.getItem('baby-care-logs') || '[]');
-          const oldName  = localStorage.getItem('baby-care-name');
-          const oldSleep = localStorage.getItem('baby-care-active-sleep');
-          if (oldLogs.length > 0 || oldName || oldSleep) {
-            const batch = db.batch();
-            for (const l of oldLogs) batch.set(logsCol().doc(), l);
-            if (oldName)  batch.set(settingsDoc('baby-name'),    { value: oldName });
-            if (oldSleep) batch.set(settingsDoc('active-sleep'), { value: oldSleep });
-            await batch.commit();
+        try {
+          const existing = await logsCol().limit(1).get();
+          if (existing.empty) {
+            const oldLogs  = JSON.parse(localStorage.getItem('baby-care-logs') || '[]');
+            const oldName  = localStorage.getItem('baby-care-name');
+            const oldSleep = localStorage.getItem('baby-care-active-sleep');
+            if (oldLogs.length > 0 || oldName || oldSleep) {
+              const batch = db.batch();
+              for (const l of oldLogs) batch.set(logsCol().doc(), l);
+              if (oldName)  batch.set(settingsDoc('baby-name'),    { value: oldName });
+              if (oldSleep) batch.set(settingsDoc('active-sleep'), { value: oldSleep });
+              await batch.commit();
+            }
           }
+          localStorage.setItem(MIGRATED_KEY, '1');
+        } catch (err) {
+          console.error('Migration error (skipped):', err);
         }
-        localStorage.setItem(MIGRATED_KEY, '1');
       }
 
       // Load settings
-      const [nameDoc, sleepDoc] = await Promise.all([
-        settingsDoc('baby-name').get(),
-        settingsDoc('active-sleep').get()
-      ]);
-      babyName    = nameDoc.exists  ? nameDoc.data().value  : '';
-      activeSleep = sleepDoc.exists ? JSON.parse(sleepDoc.data().value) : null;
+      try {
+        const [nameDoc, sleepDoc] = await Promise.all([
+          settingsDoc('baby-name').get(),
+          settingsDoc('active-sleep').get()
+        ]);
+        babyName    = nameDoc.exists  ? nameDoc.data().value  : '';
+        activeSleep = sleepDoc.exists ? JSON.parse(sleepDoc.data().value) : null;
+      } catch (err) {
+        console.error('Settings load error:', err);
+        if (err.code === 'permission-denied' || err.code === 'unauthenticated') {
+          showReloginDialog('ログインが必要です',
+            'データの読み込みに失敗しました。<br>もう一度ログインしてください。');
+          return;
+        }
+      }
 
       updateHeaderName();
       updateSleepButton();
@@ -1704,12 +1867,23 @@
 
       // Real-time listener
       if (unsubscribeListener) unsubscribeListener();
-      unsubscribeListener = logsCol().orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-        logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderLogs();
-        renderStats();
-        if (selectedCalDate) renderCalendar();
-      });
+      unsubscribeListener = logsCol().orderBy('timestamp', 'desc').onSnapshot(
+        snapshot => {
+          logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          renderLogs();
+          renderStats();
+          if (selectedCalDate) renderCalendar();
+        },
+        err => {
+          console.error('Snapshot listener error:', err);
+          if (err.code === 'permission-denied' || err.code === 'unauthenticated') {
+            showReloginDialog('セッションが切れました',
+              'データの受信が停止しました。<br>もう一度ログインしてください。');
+          } else {
+            showErrorToast('データの同期に失敗しました。ページを再読込してください。');
+          }
+        }
+      );
     }
 
     // ── Theme ─────────────────────────────────────────────
@@ -1726,21 +1900,43 @@
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
 
+      // オフライン検知
+      window.addEventListener('offline', () => {
+        document.getElementById('offlineBanner').classList.add('show');
+      });
+      window.addEventListener('online', () => {
+        document.getElementById('offlineBanner').classList.remove('show');
+      });
+      if (!navigator.onLine) {
+        document.getElementById('offlineBanner').classList.add('show');
+      }
+
       // リダイレクト結果を先に処理してから onAuthStateChanged を設定
       try {
         await firebase.auth().getRedirectResult();
       } catch (err) {
         console.error('Redirect result error:', err);
+        const errEl = document.getElementById('authErrorMsg');
+        if (errEl) errEl.textContent = 'ログインに失敗しました。もう一度お試しください。';
       }
 
       firebase.auth().onAuthStateChanged(async user => {
         currentUser = user;
         if (!user) {
-          document.getElementById('authScreen').style.display  = 'flex';
-          document.getElementById('familyScreen').style.display = 'none';
+          if (wasLoggedIn) {
+            // セッション切れ → 再ログインダイアログ
+            showReloginDialog('セッションが切れました',
+              'しばらく操作がなかったため、ログインが切れました。<br>もう一度ログインしてください。');
+          } else {
+            // 初回または通常ログアウト → ログイン画面
+            document.getElementById('authScreen').style.display  = 'flex';
+            document.getElementById('familyScreen').style.display = 'none';
+          }
           return;
         }
-        document.getElementById('authScreen').style.display = 'none';
+        wasLoggedIn = true;
+        document.getElementById('authScreen').style.display  = 'none';
+        document.getElementById('reloginBackdrop').classList.remove('open');
         try {
           await user.getIdToken(true); // Firestore にトークンが届く前に強制更新
           const userDoc = await db.collection('users').doc(user.uid).get();
@@ -1751,10 +1947,15 @@
           familyId = userDoc.data().familyId;
           startApp();
         } catch (err) {
-          console.error('Firestore error:', err);
-          document.getElementById('familyScreen').style.display = 'flex';
-          const msgEl = document.getElementById('familyMsg');
-          if (msgEl) { msgEl.textContent = 'データ読込エラー。再度お試しください。'; msgEl.className = 'family-msg error'; }
+          console.error('Auth init error:', err);
+          if (err.code === 'permission-denied' || err.code === 'unauthenticated') {
+            showReloginDialog('ログインが必要です',
+              'データへのアクセスに失敗しました。<br>もう一度ログインしてください。');
+          } else {
+            document.getElementById('familyScreen').style.display = 'flex';
+            const msgEl = document.getElementById('familyMsg');
+            if (msgEl) { msgEl.textContent = 'データ読込エラー。再度お試しください。'; msgEl.className = 'family-msg error'; }
+          }
         }
       });
     })();
