@@ -450,6 +450,22 @@
     .relogin-title { font-size: 1.1rem; font-weight: bold; color: var(--label-txt); margin-bottom: 10px; }
     .relogin-sub   { font-size: 0.82rem; color: var(--sub-txt); line-height: 1.7; margin-bottom: 24px; }
 
+    /* ── Update Banner ── */
+    .update-banner {
+      display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1600;
+      background: #8b9eff; color: white;
+      padding: 10px 16px; font-size: 0.82rem; font-weight: bold;
+      align-items: center; justify-content: space-between; gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .update-banner.show { display: flex; }
+    .update-banner-btn {
+      background: white; color: #8b9eff; border: none;
+      border-radius: 20px; padding: 5px 14px;
+      font-size: 0.8rem; font-weight: bold; cursor: pointer;
+      white-space: nowrap; font-family: inherit;
+    }
+
     /* ── Offline Banner ── */
     .offline-banner {
       display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1500;
@@ -1022,6 +1038,12 @@
     </div>
   </div>
 
+  <!-- Update Banner -->
+  <div id="updateBanner" class="update-banner">
+    <span>🆕 新しいバージョンがあります</span>
+    <button class="update-banner-btn" onclick="applyUpdate()">更新する</button>
+  </div>
+
   <!-- Offline Banner -->
   <div id="offlineBanner" class="offline-banner">
     📡 オフライン中 — ネットワーク接続を確認してください
@@ -1142,6 +1164,12 @@
       el.textContent = msg;
       el.classList.add('show');
       errorToastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+    }
+
+    function applyUpdate() {
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      });
     }
 
     function showSuccessToast(msg) {
@@ -2265,7 +2293,20 @@
     // ── Init ──────────────────────────────────────────────
     (async function init() {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW register failed:', e));
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            newSW.addEventListener('statechange', () => {
+              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                document.getElementById('updateBanner').classList.add('show');
+              }
+            });
+          });
+        }).catch(e => console.warn('SW register failed:', e));
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload();
+        });
       }
 
       const theme = localStorage.getItem(THEME_KEY) || 'light';
