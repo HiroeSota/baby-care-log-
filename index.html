@@ -1183,20 +1183,18 @@
     // ── Notification System ───────────────────────────────
 
     async function loadNotifSettings() {
-      try {
-        const doc = await settingsDoc('notif-settings').get();
-        if (doc.exists) {
-          const saved = JSON.parse(doc.data().value);
-          notifSettings.nursing = { ...notifSettings.nursing, ...(saved.nursing || {}) };
-          notifSettings.sleep   = { ...notifSettings.sleep,   ...(saved.sleep   || {}) };
-        }
-      } catch (err) { console.error('loadNotifSettings:', err); }
+      const saved = localStorage.getItem('baby-care-notif-settings');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          notifSettings.nursing = { ...notifSettings.nursing, ...(parsed.nursing || {}) };
+          notifSettings.sleep   = { ...notifSettings.sleep,   ...(parsed.sleep   || {}) };
+        } catch (err) { console.error('loadNotifSettings:', err); }
+      }
     }
 
     async function saveNotifSettings() {
-      try {
-        await settingsDoc('notif-settings').set({ value: JSON.stringify(notifSettings) });
-      } catch (err) { handleFirestoreError(err); }
+      localStorage.setItem('baby-care-notif-settings', JSON.stringify(notifSettings));
     }
 
     async function requestNotifPermission() {
