@@ -911,6 +911,15 @@
       <div class="account-section">
         <div class="account-label">🔔 予測通知</div>
 
+        <!-- 通知ブロック時の案内 -->
+        <div id="notifDeniedGuide" class="notif-info warn" style="display:none;margin-bottom:10px">
+          🔔 通知がブロックされています。以下の手順で許可してください。<br><br>
+          ① iPhoneの「設定」アプリを開く<br>
+          ② 「通知」をタップ<br>
+          ③ 「育児きろく」をタップ<br>
+          ④「通知を許可」をオンにする
+        </div>
+
         <!-- 授乳通知カード -->
         <div class="notif-card">
           <div class="notif-card-header">
@@ -1344,6 +1353,9 @@
     }
 
     function updateNotifUI() {
+      const isDenied = 'Notification' in window && Notification.permission === 'denied';
+      document.getElementById('notifDeniedGuide').style.display = isDenied ? 'block' : 'none';
+
       ['nursing', 'sleep'].forEach(type => {
         const s = notifSettings[type];
         document.getElementById(`${type}NotifToggle`).checked = s.enabled;
