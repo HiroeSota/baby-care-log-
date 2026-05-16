@@ -873,7 +873,11 @@
   <div class="modal-backdrop" id="accountModal" onclick="if(event.target===this)closeAccountModal()">
     <div class="modal-sheet modal-sheet-scroll">
       <div class="modal-handle"></div>
-      <div class="modal-title">⚙️ 設定</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="width:36px"></div>
+        <div class="modal-title" style="margin-bottom:0">⚙️ 設定</div>
+        <button onclick="closeAccountModal()" style="width:36px;height:36px;border:none;background:var(--cancel-bg);border-radius:50%;font-size:1rem;cursor:pointer;color:var(--cancel-txt);display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
       <div class="account-section">
         <div class="account-label">赤ちゃんの名前</div>
         <input class="text-input" type="text" id="babyNameInput"
