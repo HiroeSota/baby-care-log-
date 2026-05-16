@@ -1352,20 +1352,50 @@
       });
     }
 
-    async function onNotifToggle(type) {
+    function onNotifToggle(type) {
       const enabled = document.getElementById(`${type}NotifToggle`).checked;
-      if (enabled) {
-        const granted = await requestNotifPermission();
-        if (!granted) {
-          document.getElementById(`${type}NotifToggle`).checked = false;
-          showErrorToast('通知の許可が必要です。ブラウザの設定から通知を許可してください。');
-          return;
-        }
+
+      if (!enabled) {
+        notifSettings[type].enabled = false;
+        saveNotifSettings();
+        document.getElementById(`${type}NotifOptions`).style.display = 'none';
+        cancelNotifTimer(type);
+        return;
       }
-      notifSettings[type].enabled = enabled;
-      await saveNotifSettings();
-      document.getElementById(`${type}NotifOptions`).style.display = enabled ? 'block' : 'none';
-      if (enabled) updateNotifModeUI(type);
+
+      if (!('Notification' in window)) {
+        document.getElementById(`${type}NotifToggle`).checked = false;
+        showErrorToast('お使いのブラウザは通知に対応していません。');
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
+        document.getElementById(`${type}NotifToggle`).checked = false;
+        showErrorToast('通知がブロックされています。設定アプリ → 通知 → 育児きろく から許可してください。');
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        _applyNotifEnabled(type);
+        return;
+      }
+
+      // iOSはユーザー操作から直接呼ぶ必要がある
+      Notification.requestPermission().then(result => {
+        if (result === 'granted') {
+          _applyNotifEnabled(type);
+        } else {
+          document.getElementById(`${type}NotifToggle`).checked = false;
+          showErrorToast('通知が許可されませんでした。もう一度お試しください。');
+        }
+      });
+    }
+
+    function _applyNotifEnabled(type) {
+      notifSettings[type].enabled = true;
+      saveNotifSettings();
+      document.getElementById(`${type}NotifOptions`).style.display = 'block';
+      updateNotifModeUI(type);
       scheduleNotif(type);
     }
 
