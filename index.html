@@ -1427,18 +1427,17 @@
         const grad = ctx.createLinearGradient(0, fillY, 0, FILL_BOT);
         grad.addColorStop(0, '#ffe880');
         grad.addColorStop(1, '#ff9030');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, fillY + 4, W, FILL_BOT - fillY + 10);
 
-        // Wave at liquid surface
+        // 波を水面として、その下側（液体）を塗る
         const phase = (Date.now() % 2400) / 2400 * Math.PI * 2;
         ctx.beginPath();
+        ctx.moveTo(-5, FILL_BOT + 10);
+        ctx.lineTo(-5, fillY);
         for (let x = -5; x <= W + 5; x++) {
-          const wY = fillY + Math.sin(phase + x * 0.18) * 2.5 + 1.5;
-          x === -5 ? ctx.moveTo(x, wY) : ctx.lineTo(x, wY);
+          const wY = fillY + Math.sin(phase + x * 0.18) * 3;
+          ctx.lineTo(x, wY);
         }
-        ctx.lineTo(W + 5, fillY - 5);
-        ctx.lineTo(-5, fillY - 5);
+        ctx.lineTo(W + 5, FILL_BOT + 10);
         ctx.closePath();
         ctx.fillStyle = grad;
         ctx.fill();
