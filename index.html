@@ -614,6 +614,46 @@
       background: none; border: none; color: #ffb5c8; font-weight: bold;
       font-size: 0.88rem; cursor: pointer; padding: 0; font-family: inherit;
     }
+
+    /* ── Milk Bottle ── */
+    .milk-bottle-section {
+      margin: 8px 20px 0;
+      background: var(--bg-stats);
+      border-radius: 18px; padding: 14px 16px;
+      transition: background 0.3s;
+    }
+    .milk-bottle-layout {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .bottle-svg { width: 60px; height: 135px; display: block; overflow: visible; }
+    .milk-bottle-info { flex: 1; }
+    .milk-amount {
+      font-size: 1.55rem; font-weight: bold;
+      color: var(--label-txt); line-height: 1.1; margin-bottom: 2px;
+    }
+    .milk-goal  { font-size: 0.78rem; color: var(--sub-txt); margin-bottom: 8px; }
+    .milk-pct-label { font-size: 0.78rem; color: var(--section-h); font-weight: bold; margin-bottom: 4px; }
+    .milk-pct-bar-wrap {
+      height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+    }
+    .milk-pct-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ffe060, #ff9f43);
+      border-radius: 4px; transition: width 0.7s cubic-bezier(0.34,1.2,0.64,1);
+    }
+    .milk-celebration {
+      margin-top: 10px;
+      background: linear-gradient(135deg, #fffbe0, #ffecaa);
+      border: 1px solid #ffd060;
+      border-radius: 12px; padding: 10px 14px;
+      font-size: 0.88rem; font-weight: bold; color: #8a6800;
+      text-align: center;
+      animation: celebPop 0.45s cubic-bezier(0.34,1.5,0.64,1);
+    }
+    @keyframes celebPop {
+      from { transform: scale(0.8); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -658,6 +698,51 @@
           <div class="stat-unit" id="statSleepUnit"></div>
           <div class="stat-name">合計睡眠</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Milk Bottle Section -->
+    <div class="milk-bottle-section" id="milkBottleSection">
+      <div class="stats-label">🍼 本日のミルク摂取量</div>
+      <div class="milk-bottle-layout">
+        <div>
+          <svg class="bottle-svg" viewBox="0 0 80 180" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="bottleClip">
+                <path d="M30,2 L30,22 Q30,32 20,38 L12,46 Q6,56 6,68 L6,162 Q6,174 18,174 L62,174 Q74,174 74,162 L74,68 Q74,56 68,46 L60,38 Q50,32 50,22 L50,2 Z"/>
+              </clipPath>
+              <linearGradient id="milkGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffe980"/>
+                <stop offset="100%" stop-color="#ffc030"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="80" height="180" clip-path="url(#bottleClip)" fill="var(--bg-card)"/>
+            <g id="bottleWaveGroup" clip-path="url(#bottleClip)" transform="translate(0,200)">
+              <path fill="url(#milkGradient)"
+                    d="M-80,4 Q-60,0 -40,4 Q-20,8 0,4 Q20,0 40,4 Q60,8 80,4 Q100,0 120,4 Q140,8 160,4 Q180,0 200,4 L200,200 L-80,200 Z">
+                <animateTransform attributeName="transform" type="translate"
+                  from="0,0" to="-80,0" dur="2.5s" repeatCount="indefinite"/>
+              </path>
+            </g>
+            <path d="M30,2 L30,22 Q30,32 20,38 L12,46 Q6,56 6,68 L6,162 Q6,174 18,174 L62,174 Q74,174 74,162 L74,68 Q74,56 68,46 L60,38 Q50,32 50,22 L50,2 Z"
+                  fill="none" stroke="var(--border)" stroke-width="2.5" stroke-linejoin="round"/>
+            <rect x="28" y="0" width="24" height="4" rx="2" fill="var(--border)" opacity="0.35"/>
+            <line x1="60" y1="95"  x2="71" y2="95"  stroke="var(--border)" stroke-width="1" opacity="0.4"/>
+            <line x1="60" y1="121" x2="71" y2="121" stroke="var(--border)" stroke-width="1" opacity="0.4"/>
+            <line x1="60" y1="147" x2="71" y2="147" stroke="var(--border)" stroke-width="1" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="milk-bottle-info">
+          <div class="milk-amount" id="milkTodayAmount">0 ml</div>
+          <div class="milk-goal" id="milkGoalText">目標: 700 ml</div>
+          <div class="milk-pct-label" id="milkPctLabel">0%</div>
+          <div class="milk-pct-bar-wrap">
+            <div class="milk-pct-bar" id="milkPctBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="milk-celebration" id="milkCelebration" style="display:none">
+        🎉 お疲れ様です！！今日の目標を達成しました！
       </div>
     </div>
 
@@ -934,6 +1019,17 @@
         </div>
       </div>
 
+      <!-- ミルク目標設定 -->
+      <div class="account-section">
+        <div class="account-label">🍼 1日のミルク目標量</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="text-input" type="number" id="milkGoalInput" inputmode="numeric" min="0" step="10" placeholder="例: 700" style="flex:1">
+          <span style="font-size:0.9rem;color:var(--sub-txt);white-space:nowrap">ml</span>
+          <button class="btn-join" onclick="saveMilkGoal()" style="padding:12px 16px;white-space:nowrap">保存</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">設定すると記録タブに哺乳瓶グラフが表示されます</div>
+      </div>
+
       <!-- 通知設定 -->
       <div class="account-section">
         <div class="account-label">🔔 予測通知</div>
@@ -1140,6 +1236,8 @@
     let errorToastTimer     = null;
     let successToastTimer   = null;
 
+    let milkDailyGoal = 700;
+
     let notifSettings = {
       nursing: { enabled: false, mode: 'auto', manualH: 3, manualM: 0 },
       sleep:   { enabled: false, mode: 'auto', manualH: 2, manualM: 0 }
@@ -1239,6 +1337,69 @@
     }
 
     // ── Notification System ───────────────────────────────
+
+    // ── Milk Bottle ──────────────────────────────────────
+    async function loadMilkGoal() {
+      try {
+        const doc = await settingsDoc('milk-daily-goal').get();
+        if (doc.exists && doc.data().value > 0) milkDailyGoal = doc.data().value;
+      } catch (e) { /* use default */ }
+    }
+
+    async function saveMilkGoal() {
+      const val = parseInt(document.getElementById('milkGoalInput').value, 10);
+      if (!val || val <= 0) { showErrorToast('正しい目標量を入力してください。'); return; }
+      milkDailyGoal = val;
+      try {
+        await settingsDoc('milk-daily-goal').set({ value: val });
+        renderBottle();
+        showSuccessToast(`1日の目標を ${val}ml に設定しました ✓`);
+      } catch (e) { handleFirestoreError(e); }
+    }
+
+    function calcTodayMilkMl() {
+      const today = new Date().toDateString();
+      let total = 0;
+      for (const log of logs) {
+        if (log.type !== 'nursing' || log.subtype !== 'milk') continue;
+        if (new Date(log.timestamp).toDateString() !== today) continue;
+        if (log.ml > 0) {
+          total += log.ml;
+        } else {
+          const match = log.label && log.label.match(/(\d+)ml/);
+          if (match) total += parseInt(match[1], 10);
+        }
+      }
+      return total;
+    }
+
+    function renderBottle() {
+      const total = calcTodayMilkMl();
+      const goal  = milkDailyGoal || 700;
+      const pct   = Math.min(1, goal > 0 ? total / goal : 0);
+
+      document.getElementById('milkTodayAmount').textContent = `${total} ml`;
+      document.getElementById('milkGoalText').textContent    = `目標: ${goal} ml`;
+      document.getElementById('milkPctLabel').textContent    = `${Math.round(pct * 100)}%`;
+      document.getElementById('milkPctBar').style.width      = `${Math.round(pct * 100)}%`;
+
+      const BODY_TOP = 68, BODY_BOTTOM = 174;
+      const fillH = pct * (BODY_BOTTOM - BODY_TOP);
+      const waveY = pct > 0 ? (BODY_BOTTOM - fillH - 4) : 200;
+      document.getElementById('bottleWaveGroup').setAttribute('transform', `translate(0,${waveY})`);
+
+      const celEl = document.getElementById('milkCelebration');
+      if (pct >= 1) {
+        if (celEl.style.display === 'none') {
+          celEl.style.display = 'block';
+          celEl.style.animation = 'none';
+          void celEl.offsetWidth;
+          celEl.style.animation = '';
+        }
+      } else {
+        celEl.style.display = 'none';
+      }
+    }
 
     async function loadNotifSettings() {
       const saved = localStorage.getItem('baby-care-notif-settings');
@@ -1817,16 +1978,19 @@
     function confirmNursing() {
       if (!selectedNursingType) return;
       let label, icon = '🍼';
+      let mlVal = null;
       if (selectedNursingType === 'right') { label = '授乳 — 右おっぱい'; }
       else if (selectedNursingType === 'left') { label = '授乳 — 左おっぱい'; }
       else {
         icon = '🍶';
-        const ml = parseInt(document.getElementById('milkAmount').value, 10);
-        label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
+        mlVal = parseInt(document.getElementById('milkAmount').value, 10) || null;
+        label = mlVal > 0 ? `ミルク ${mlVal}ml` : 'ミルク';
       }
       closeNursingModal();
-      safeAdd({ type:'nursing', subtype:selectedNursingType, label, icon,
-                displayTime: nowDisplayTime(), timestamp: new Date().toISOString() });
+      const data = { type:'nursing', subtype:selectedNursingType, label, icon,
+                     displayTime: nowDisplayTime(), timestamp: new Date().toISOString() };
+      if (mlVal > 0) data.ml = mlVal;
+      safeAdd(data);
     }
 
     // ── Diaper Modal ──────────────────────────────────────
@@ -1868,6 +2032,7 @@
     // ── Account Modal ─────────────────────────────────────
     function openAccountModal() {
       document.getElementById('babyNameInput').value = getBabyName();
+      document.getElementById('milkGoalInput').value = milkDailyGoal || 700;
       // Show family code
       if (familyId) {
         db.collection('families').doc(familyId).get()
@@ -2158,8 +2323,11 @@
           const ml = parseInt(document.getElementById('pastMilkAmount').value, 10);
           label = ml > 0 ? `ミルク ${ml}ml` : 'ミルク';
         }
-        newLogs.push({ type:'nursing', subtype:pastNursingType, label, icon,
-                       displayTime: fmtDisplayTime(ts), timestamp: ts.toISOString() });
+        const pastMlVal = parseInt(document.getElementById('pastMilkAmount').value, 10) || null;
+        const nursingData = { type:'nursing', subtype:pastNursingType, label, icon,
+                              displayTime: fmtDisplayTime(ts), timestamp: ts.toISOString() };
+        if (pastNursingType === 'milk' && pastMlVal > 0) nursingData.ml = pastMlVal;
+        newLogs.push(nursingData);
       }
 
       else if (pastCategory === 'diaper') {
@@ -2343,6 +2511,7 @@
       }
 
       await loadNotifSettings();
+      await loadMilkGoal();
 
       updateHeaderName();
       updateSleepButton();
@@ -2355,6 +2524,7 @@
           logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           renderLogs();
           renderStats();
+          renderBottle();
           if (selectedCalDate) renderCalendar();
           rescheduleNotifications();
         },
