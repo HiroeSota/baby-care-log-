@@ -638,11 +638,13 @@
       margin-top: 10px;
       background: linear-gradient(135deg, #fffbe0, #ffecaa);
       border: 1px solid #ffd060;
-      border-radius: 12px; padding: 10px 14px;
-      font-size: 0.88rem; font-weight: bold; color: #8a6800;
+      border-radius: 14px; padding: 12px 16px;
       text-align: center;
       animation: celebPop 0.45s cubic-bezier(0.34,1.5,0.64,1);
     }
+    .celeb-icon  { font-size: 1.5rem; margin-bottom: 3px; }
+    .celeb-title { font-size: 1rem; font-weight: bold; color: #8a6800; margin-bottom: 2px; }
+    .celeb-sub   { font-size: 0.78rem; color: #a07820; }
     @keyframes celebPop {
       from { transform: scale(0.8); opacity: 0; }
       to   { transform: scale(1);   opacity: 1; }
@@ -721,7 +723,9 @@
         </div>
       </div>
       <div class="milk-celebration" id="milkCelebration" style="display:none">
-        🎉 お疲れ様です！！今日の目標を達成しました！
+        <div class="celeb-icon">🎉</div>
+        <div class="celeb-title">今日の目標達成！</div>
+        <div class="celeb-sub">お疲れ様です！赤ちゃんもママ・パパも頑張りました✨</div>
       </div>
     </div>
 
