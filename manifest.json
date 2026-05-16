@@ -1,0 +1,14 @@
+{
+  "name": "赤ちゃんケア記録",
+  "short_name": "育児きろく",
+  "description": "家族みんなで一緒に記録・リアルタイム共有",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff8f5",
+  "theme_color": "#ffb5c8",
+  "lang": "ja",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

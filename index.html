@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>赤ちゃんケア記録</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#ffb5c8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="育児きろく">
+  <link rel="apple-touch-icon" href="/icon-192.png">
   <style>
     :root {
       --bg:               #fff8f5;
@@ -2254,6 +2260,10 @@
 
     // ── Init ──────────────────────────────────────────────
     (async function init() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW register failed:', e));
+      }
+
       const theme = localStorage.getItem(THEME_KEY) || 'light';
       document.documentElement.setAttribute('data-theme', theme);
       document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
