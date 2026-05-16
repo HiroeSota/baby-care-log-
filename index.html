@@ -450,6 +450,33 @@
     .relogin-title { font-size: 1.1rem; font-weight: bold; color: var(--label-txt); margin-bottom: 10px; }
     .relogin-sub   { font-size: 0.82rem; color: var(--sub-txt); line-height: 1.7; margin-bottom: 24px; }
 
+    /* ── Notification Denied Dialog ── */
+    .notif-denied-backdrop {
+      display: none; position: fixed; inset: 0; z-index: 2100;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .notif-denied-backdrop.open { display: flex; }
+    .notif-denied-card {
+      background: var(--bg-card); border-radius: 24px;
+      padding: 32px 24px 28px; width: 100%; max-width: 340px;
+      text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+      animation: fadeIn 0.25s ease;
+    }
+    .notif-denied-icon  { font-size: 2.2rem; margin-bottom: 10px; }
+    .notif-denied-title { font-size: 1rem; font-weight: bold; color: var(--label-txt); margin-bottom: 16px; }
+    .notif-denied-steps {
+      text-align: left; background: var(--bg-stats);
+      border-radius: 14px; padding: 14px 16px; margin-bottom: 20px;
+      font-size: 0.84rem; color: var(--label-txt); line-height: 2;
+    }
+    .notif-denied-close {
+      width: 100%; padding: 14px; border: none; border-radius: 14px;
+      background: linear-gradient(135deg,#ffb5c8,#ffd6a5);
+      color: #7a4050; font-weight: bold; font-size: 0.95rem;
+      cursor: pointer; font-family: inherit;
+    }
+
     /* ── Update Banner ── */
     .update-banner {
       display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1600;
@@ -1032,6 +1059,21 @@
     <button class="snackbar-undo" onclick="undoDelete()">取り消し</button>
   </div>
 
+  <!-- Notification Denied Dialog -->
+  <div id="notifDeniedBackdrop" class="notif-denied-backdrop" onclick="if(event.target===this)closeNotifDeniedDialog()">
+    <div class="notif-denied-card">
+      <div class="notif-denied-icon">🔔</div>
+      <div class="notif-denied-title">通知をオンにするには<br>設定アプリからの許可が必要です</div>
+      <div class="notif-denied-steps">
+        ① 「設定」アプリを開く<br>
+        ② 「通知」をタップ<br>
+        ③ 「育児きろく」をタップ<br>
+        ④ 「通知を許可」をオンにする
+      </div>
+      <button class="notif-denied-close" onclick="closeNotifDeniedDialog()">閉じる</button>
+    </div>
+  </div>
+
   <!-- Re-login Dialog -->
   <div id="reloginBackdrop" class="relogin-backdrop">
     <div class="relogin-card">
@@ -1173,6 +1215,13 @@
       el.textContent = msg;
       el.classList.add('show');
       errorToastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+    }
+
+    function showNotifDeniedDialog() {
+      document.getElementById('notifDeniedBackdrop').classList.add('open');
+    }
+    function closeNotifDeniedDialog() {
+      document.getElementById('notifDeniedBackdrop').classList.remove('open');
     }
 
     function applyUpdate() {
@@ -1353,8 +1402,7 @@
     }
 
     function updateNotifUI() {
-      const isDenied = 'Notification' in window && Notification.permission === 'denied';
-      document.getElementById('notifDeniedGuide').style.display = isDenied ? 'block' : 'none';
+      document.getElementById('notifDeniedGuide').style.display = 'none';
 
       ['nursing', 'sleep'].forEach(type => {
         const s = notifSettings[type];
@@ -1383,7 +1431,7 @@
 
       if (Notification.permission === 'denied') {
         document.getElementById(`${type}NotifToggle`).checked = false;
-        showErrorToast('通知がブロックされています。設定アプリ → 通知 → 育児きろく から許可してください。');
+        showNotifDeniedDialog();
         return;
       }
 
