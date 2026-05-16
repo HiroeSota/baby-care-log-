@@ -615,32 +615,25 @@
       font-size: 0.88rem; cursor: pointer; padding: 0; font-family: inherit;
     }
 
-    /* ── Milk Bottle ── */
+    /* ── Milk Donut ── */
     .milk-bottle-section {
       margin: 0 20px 0;
       background: var(--bg-stats);
       border-radius: 18px; padding: 14px 16px;
       transition: background 0.3s;
     }
-    .milk-bottle-layout {
-      display: flex; align-items: center; gap: 16px;
-    }
-    .bottle-svg { width: 60px; height: 135px; display: block; overflow: visible; }
-    .milk-bottle-info { flex: 1; }
+    .milk-donut-layout { display: flex; align-items: center; gap: 14px; }
+    .milk-donut-wrap   { flex-shrink: 0; }
+    #milkDonutCanvas   { display: block; }
+    .milk-donut-info   { flex: 1; }
     .milk-amount {
       font-size: 1.55rem; font-weight: bold;
       color: var(--label-txt); line-height: 1.1; margin-bottom: 2px;
     }
-    .milk-goal  { font-size: 0.78rem; color: var(--sub-txt); margin-bottom: 8px; }
-    .milk-pct-label { font-size: 0.78rem; color: var(--section-h); font-weight: bold; margin-bottom: 4px; }
-    .milk-pct-bar-wrap {
-      height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
-    }
-    .milk-pct-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #ffe060, #ff9f43);
-      border-radius: 4px; transition: width 0.7s cubic-bezier(0.34,1.2,0.64,1);
-    }
+    .milk-goal { font-size: 0.78rem; color: var(--sub-txt); margin-bottom: 8px; }
+    .milk-breakdown { font-size: 0.8rem; color: var(--label-txt); display: flex; flex-direction: column; gap: 5px; }
+    .milk-breakdown-row { display: flex; align-items: baseline; gap: 5px; }
+    .milk-breakdown-approx { font-size: 0.7rem; color: var(--sub-txt); }
     .milk-celebration {
       margin-top: 10px;
       background: linear-gradient(135deg, #fffbe0, #ffecaa);
@@ -714,44 +707,17 @@
       </button>
     </div>
 
-    <!-- Milk Bottle Section (shown only when milk is recorded today) -->
+    <!-- Milk Donut Section (shown only when milk is recorded today) -->
     <div class="milk-bottle-section" id="milkBottleSection" style="display:none">
       <div class="stats-label">🍼 本日のミルク摂取量</div>
-      <div class="milk-bottle-layout">
-        <div>
-          <svg class="bottle-svg" viewBox="0 0 80 180" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <clipPath id="bottleClip">
-                <path d="M30,2 L30,22 Q30,32 20,38 L12,46 Q6,56 6,68 L6,162 Q6,174 18,174 L62,174 Q74,174 74,162 L74,68 Q74,56 68,46 L60,38 Q50,32 50,22 L50,2 Z"/>
-              </clipPath>
-              <linearGradient id="milkGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#ffe980"/>
-                <stop offset="100%" stop-color="#ffc030"/>
-              </linearGradient>
-            </defs>
-            <rect x="0" y="0" width="80" height="180" clip-path="url(#bottleClip)" fill="var(--bg-card)"/>
-            <g id="bottleWaveGroup" clip-path="url(#bottleClip)" transform="translate(0,200)">
-              <path fill="url(#milkGradient)"
-                    d="M-80,4 Q-60,0 -40,4 Q-20,8 0,4 Q20,0 40,4 Q60,8 80,4 Q100,0 120,4 Q140,8 160,4 Q180,0 200,4 L200,200 L-80,200 Z">
-                <animateTransform attributeName="transform" type="translate"
-                  from="0,0" to="-80,0" dur="2.5s" repeatCount="indefinite"/>
-              </path>
-            </g>
-            <path d="M30,2 L30,22 Q30,32 20,38 L12,46 Q6,56 6,68 L6,162 Q6,174 18,174 L62,174 Q74,174 74,162 L74,68 Q74,56 68,46 L60,38 Q50,32 50,22 L50,2 Z"
-                  fill="none" stroke="var(--border)" stroke-width="2.5" stroke-linejoin="round"/>
-            <rect x="28" y="0" width="24" height="4" rx="2" fill="var(--border)" opacity="0.35"/>
-            <line x1="60" y1="95"  x2="71" y2="95"  stroke="var(--border)" stroke-width="1" opacity="0.4"/>
-            <line x1="60" y1="121" x2="71" y2="121" stroke="var(--border)" stroke-width="1" opacity="0.4"/>
-            <line x1="60" y1="147" x2="71" y2="147" stroke="var(--border)" stroke-width="1" opacity="0.4"/>
-          </svg>
+      <div class="milk-donut-layout">
+        <div class="milk-donut-wrap">
+          <canvas id="milkDonutCanvas"></canvas>
         </div>
-        <div class="milk-bottle-info">
+        <div class="milk-donut-info">
           <div class="milk-amount" id="milkTodayAmount">0 ml</div>
           <div class="milk-goal" id="milkGoalText">目標: 700 ml</div>
-          <div class="milk-pct-label" id="milkPctLabel">0%</div>
-          <div class="milk-pct-bar-wrap">
-            <div class="milk-pct-bar" id="milkPctBar" style="width:0%"></div>
-          </div>
+          <div class="milk-breakdown" id="milkBreakdown"></div>
         </div>
       </div>
       <div class="milk-celebration" id="milkCelebration" style="display:none">
@@ -1027,7 +993,17 @@
           <span style="font-size:0.9rem;color:var(--sub-txt);white-space:nowrap">ml</span>
           <button class="btn-join" onclick="saveMilkGoal()" style="padding:12px 16px;white-space:nowrap">保存</button>
         </div>
-        <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">設定すると記録タブに哺乳瓶グラフが表示されます</div>
+        <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">授乳・ミルク合計をドーナツグラフで表示します</div>
+      </div>
+      <!-- おっぱい目安量 -->
+      <div class="account-section">
+        <div class="account-label">🤱 おっぱい1回あたりの目安量</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="text-input" type="number" id="nursingMlInput" inputmode="numeric" min="0" step="10" placeholder="例: 100" style="flex:1">
+          <span style="font-size:0.9rem;color:var(--sub-txt);white-space:nowrap">ml</span>
+          <button class="btn-join" onclick="saveNursingMlPerSession()" style="padding:12px 16px;white-space:nowrap">保存</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">おっぱいの記録をグラフに反映する目安量（デフォルト：100ml）</div>
       </div>
 
       <!-- 通知設定 -->
@@ -1236,9 +1212,10 @@
     let errorToastTimer     = null;
     let successToastTimer   = null;
 
-    let milkDailyGoal    = 700;
-    let bottleCurrentY   = 200;
-    let bottleAnimId     = null;
+    let milkDailyGoal       = 700;
+    let nursingMlPerSession = 100;
+    let donutCurrentPct     = 0;
+    let donutAnimId         = null;
 
     let notifSettings = {
       nursing: { enabled: false, mode: 'auto', manualH: 3, manualM: 0 },
@@ -1340,7 +1317,7 @@
 
     // ── Notification System ───────────────────────────────
 
-    // ── Milk Bottle ──────────────────────────────────────
+    // ── Milk Donut ───────────────────────────────────────
     async function loadMilkGoal() {
       try {
         const doc = await settingsDoc('milk-daily-goal').get();
@@ -1359,70 +1336,129 @@
       } catch (e) { handleFirestoreError(e); }
     }
 
-    function calcTodayMilkMl() {
-      const today = new Date().toDateString();
-      let total = 0;
-      for (const log of logs) {
-        if (log.type !== 'nursing' || log.subtype !== 'milk') continue;
-        if (new Date(log.timestamp).toDateString() !== today) continue;
-        if (log.ml > 0) {
-          total += log.ml;
-        } else {
-          const match = log.label && log.label.match(/(\d+)ml/);
-          if (match) total += parseInt(match[1], 10);
-        }
-      }
-      return total;
+    async function loadNursingMlPerSession() {
+      try {
+        const doc = await settingsDoc('nursing-ml-per-session').get();
+        if (doc.exists && doc.data().value > 0) nursingMlPerSession = doc.data().value;
+      } catch (e) { /* use default */ }
     }
 
-    function animateBottleTo(targetY, duration) {
-      if (bottleAnimId) { cancelAnimationFrame(bottleAnimId); bottleAnimId = null; }
-      const startY = bottleCurrentY;
-      const dist   = targetY - startY;
-      if (Math.abs(dist) < 0.5) {
-        bottleCurrentY = targetY;
-        document.getElementById('bottleWaveGroup').setAttribute('transform', `translate(0,${targetY})`);
-        return;
+    async function saveNursingMlPerSession() {
+      const val = parseInt(document.getElementById('nursingMlInput').value, 10);
+      if (!val || val <= 0) { showErrorToast('正しい目安量を入力してください。'); return; }
+      nursingMlPerSession = val;
+      try {
+        await settingsDoc('nursing-ml-per-session').set({ value: val });
+        renderBottle();
+        showSuccessToast(`おっぱい1回あたり ${val}ml に設定しました ✓`);
+      } catch (e) { handleFirestoreError(e); }
+    }
+
+    function calcTodayMilkStats() {
+      const today = new Date().toDateString();
+      let nursingCount = 0, formulaMl = 0;
+      for (const log of logs) {
+        if (log.type !== 'nursing') continue;
+        if (new Date(log.timestamp).toDateString() !== today) continue;
+        if (log.subtype === 'milk') {
+          const ml = log.ml > 0 ? log.ml : (() => {
+            const m = log.label && log.label.match(/(\d+)ml/);
+            return m ? parseInt(m[1], 10) : 0;
+          })();
+          formulaMl += ml;
+        } else {
+          nursingCount++;
+        }
       }
-      const ms    = duration || Math.min(1200, Math.max(400, Math.abs(dist) * 6));
+      const nursingMl = nursingCount * nursingMlPerSession;
+      return { total: nursingMl + formulaMl, nursingCount, nursingMl, formulaMl };
+    }
+
+    function drawMilkDonut(pct) {
+      const canvas = document.getElementById('milkDonutCanvas');
+      if (!canvas) return;
+      const dpr  = window.devicePixelRatio || 1;
+      const SIZE = 110;
+      canvas.width = canvas.height = SIZE * dpr;
+      canvas.style.width = canvas.style.height = SIZE + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      const cx = SIZE / 2, cy = SIZE / 2, R = 43, LW = 11;
+      const isDark   = document.documentElement.getAttribute('data-theme') === 'dark';
+      const bgRing   = isDark ? '#353a58' : '#ece0e4';
+      const txtMain  = isDark ? '#e8d0da' : '#5a3d4a';
+      // background ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.strokeStyle = bgRing;
+      ctx.lineWidth   = LW;
+      ctx.stroke();
+      // fill arc
+      const p = Math.min(1, Math.max(0, pct));
+      if (p > 0.005) {
+        const startA = -Math.PI / 2;
+        const grad   = ctx.createLinearGradient(cx - R, cy, cx + R, cy);
+        grad.addColorStop(0, '#ffcb60');
+        grad.addColorStop(1, '#ff8f3f');
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, startA, startA + p * Math.PI * 2);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth   = LW;
+        ctx.lineCap     = 'round';
+        ctx.stroke();
+      }
+      // center: percentage
+      const displayPct = Math.round(p * 100);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = txtMain;
+      ctx.font = `bold ${displayPct >= 100 ? 18 : 22}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.fillText(`${displayPct}%`, cx, cy + 8);
+    }
+
+    function animateDonutTo(targetPct) {
+      if (donutAnimId) { cancelAnimationFrame(donutAnimId); donutAnimId = null; }
+      const startPct = donutCurrentPct;
+      const dist = targetPct - startPct;
+      if (Math.abs(dist) < 0.001) { donutCurrentPct = targetPct; drawMilkDonut(targetPct); return; }
+      const ms = Math.min(1200, Math.max(500, Math.abs(dist) * 1800));
       const start = performance.now();
       function frame(now) {
         const t    = Math.min(1, (now - start) / ms);
         const ease = 1 - Math.pow(1 - t, 3);
-        const y    = startY + dist * ease;
-        bottleCurrentY = y;
-        document.getElementById('bottleWaveGroup').setAttribute('transform', `translate(0,${y})`);
-        if (t < 1) { bottleAnimId = requestAnimationFrame(frame); }
-        else        { bottleAnimId = null; }
+        donutCurrentPct = startPct + dist * ease;
+        drawMilkDonut(donutCurrentPct);
+        if (t < 1) { donutAnimId = requestAnimationFrame(frame); }
+        else        { donutAnimId = null; }
       }
-      bottleAnimId = requestAnimationFrame(frame);
+      donutAnimId = requestAnimationFrame(frame);
     }
 
     function renderBottle() {
-      const total   = calcTodayMilkMl();
+      const stats   = calcTodayMilkStats();
       const section = document.getElementById('milkBottleSection');
 
-      if (total === 0) {
+      if (stats.total === 0) {
         section.style.display = 'none';
-        bottleCurrentY = 200;
-        if (bottleAnimId) { cancelAnimationFrame(bottleAnimId); bottleAnimId = null; }
-        document.getElementById('bottleWaveGroup').setAttribute('transform', 'translate(0,200)');
+        donutCurrentPct = 0;
+        if (donutAnimId) { cancelAnimationFrame(donutAnimId); donutAnimId = null; }
         return;
       }
       section.style.display = 'block';
 
-      const goal  = milkDailyGoal || 700;
-      const pct   = Math.min(1, goal > 0 ? total / goal : 0);
+      const goal = milkDailyGoal || 700;
+      const pct  = Math.min(1, goal > 0 ? stats.total / goal : 0);
 
-      document.getElementById('milkTodayAmount').textContent = `${total} ml`;
+      document.getElementById('milkTodayAmount').textContent = `${stats.total} ml`;
       document.getElementById('milkGoalText').textContent    = `目標: ${goal} ml`;
-      document.getElementById('milkPctLabel').textContent    = `${Math.round(pct * 100)}%`;
-      document.getElementById('milkPctBar').style.width      = `${Math.round(pct * 100)}%`;
 
-      const BODY_TOP = 68, BODY_BOTTOM = 174;
-      const fillH   = pct * (BODY_BOTTOM - BODY_TOP);
-      const targetY = BODY_BOTTOM - fillH - 4;
-      animateBottleTo(targetY);
+      let bdHtml = '';
+      if (stats.nursingCount > 0)
+        bdHtml += `<div class="milk-breakdown-row">🤱 おっぱい ${stats.nursingCount}回 <strong>≈ ${stats.nursingMl}ml</strong><span class="milk-breakdown-approx">（目安）</span></div>`;
+      if (stats.formulaMl > 0)
+        bdHtml += `<div class="milk-breakdown-row">🍶 ミルク <strong>${stats.formulaMl}ml</strong><span class="milk-breakdown-approx">（実測）</span></div>`;
+      document.getElementById('milkBreakdown').innerHTML = bdHtml;
+
+      animateDonutTo(pct);
 
       const celEl = document.getElementById('milkCelebration');
       if (pct >= 1) {
@@ -2068,7 +2104,8 @@
     // ── Account Modal ─────────────────────────────────────
     function openAccountModal() {
       document.getElementById('babyNameInput').value = getBabyName();
-      document.getElementById('milkGoalInput').value = milkDailyGoal || 700;
+      document.getElementById('milkGoalInput').value    = milkDailyGoal || 700;
+      document.getElementById('nursingMlInput').value   = nursingMlPerSession || 100;
       // Show family code
       if (familyId) {
         db.collection('families').doc(familyId).get()
@@ -2548,6 +2585,7 @@
 
       await loadNotifSettings();
       await loadMilkGoal();
+      await loadNursingMlPerSession();
 
       updateHeaderName();
       updateSleepButton();
