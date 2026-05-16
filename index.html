@@ -617,7 +617,7 @@
 
     /* ── Milk Bottle ── */
     .milk-bottle-section {
-      margin: 8px 20px 0;
+      margin: 0 20px 0;
       background: var(--bg-stats);
       border-radius: 18px; padding: 14px 16px;
       transition: background 0.3s;
@@ -701,6 +701,19 @@
       </div>
     </div>
 
+    <div class="buttons">
+      <button class="btn btn-nursing" onclick="openNursingModal()">
+        <span class="btn-icon">🍼</span><span class="btn-label">授　乳</span>
+      </button>
+      <button class="btn btn-diaper" onclick="openDiaperModal()">
+        <span class="btn-icon">🌿</span><span class="btn-label">おむつ</span>
+      </button>
+      <button class="btn btn-sleep" id="btnSleep" onclick="handleSleep()">
+        <span class="btn-icon" id="sleepIcon">🌙</span>
+        <span class="btn-label" id="sleepLabel">ねんね開始</span>
+      </button>
+    </div>
+
     <!-- Milk Bottle Section -->
     <div class="milk-bottle-section" id="milkBottleSection">
       <div class="stats-label">🍼 本日のミルク摂取量</div>
@@ -744,19 +757,6 @@
       <div class="milk-celebration" id="milkCelebration" style="display:none">
         🎉 お疲れ様です！！今日の目標を達成しました！
       </div>
-    </div>
-
-    <div class="buttons">
-      <button class="btn btn-nursing" onclick="openNursingModal()">
-        <span class="btn-icon">🍼</span><span class="btn-label">授　乳</span>
-      </button>
-      <button class="btn btn-diaper" onclick="openDiaperModal()">
-        <span class="btn-icon">🌿</span><span class="btn-label">おむつ</span>
-      </button>
-      <button class="btn btn-sleep" id="btnSleep" onclick="handleSleep()">
-        <span class="btn-icon" id="sleepIcon">🌙</span>
-        <span class="btn-label" id="sleepLabel">ねんね開始</span>
-      </button>
     </div>
 
     <div class="log-section">
@@ -1236,7 +1236,9 @@
     let errorToastTimer     = null;
     let successToastTimer   = null;
 
-    let milkDailyGoal = 700;
+    let milkDailyGoal    = 700;
+    let bottleCurrentY   = 200;
+    let bottleAnimId     = null;
 
     let notifSettings = {
       nursing: { enabled: false, mode: 'auto', manualH: 3, manualM: 0 },
@@ -1373,6 +1375,29 @@
       return total;
     }
 
+    function animateBottleTo(targetY, duration) {
+      if (bottleAnimId) { cancelAnimationFrame(bottleAnimId); bottleAnimId = null; }
+      const startY = bottleCurrentY;
+      const dist   = targetY - startY;
+      if (Math.abs(dist) < 0.5) {
+        bottleCurrentY = targetY;
+        document.getElementById('bottleWaveGroup').setAttribute('transform', `translate(0,${targetY})`);
+        return;
+      }
+      const ms    = duration || Math.min(1200, Math.max(400, Math.abs(dist) * 6));
+      const start = performance.now();
+      function frame(now) {
+        const t    = Math.min(1, (now - start) / ms);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const y    = startY + dist * ease;
+        bottleCurrentY = y;
+        document.getElementById('bottleWaveGroup').setAttribute('transform', `translate(0,${y})`);
+        if (t < 1) { bottleAnimId = requestAnimationFrame(frame); }
+        else        { bottleAnimId = null; }
+      }
+      bottleAnimId = requestAnimationFrame(frame);
+    }
+
     function renderBottle() {
       const total = calcTodayMilkMl();
       const goal  = milkDailyGoal || 700;
@@ -1384,9 +1409,9 @@
       document.getElementById('milkPctBar').style.width      = `${Math.round(pct * 100)}%`;
 
       const BODY_TOP = 68, BODY_BOTTOM = 174;
-      const fillH = pct * (BODY_BOTTOM - BODY_TOP);
-      const waveY = pct > 0 ? (BODY_BOTTOM - fillH - 4) : 200;
-      document.getElementById('bottleWaveGroup').setAttribute('transform', `translate(0,${waveY})`);
+      const fillH  = pct * (BODY_BOTTOM - BODY_TOP);
+      const targetY = pct > 0 ? (BODY_BOTTOM - fillH - 4) : 200;
+      animateBottleTo(targetY);
 
       const celEl = document.getElementById('milkCelebration');
       if (pct >= 1) {
