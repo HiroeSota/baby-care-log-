@@ -714,8 +714,8 @@
       </button>
     </div>
 
-    <!-- Milk Bottle Section -->
-    <div class="milk-bottle-section" id="milkBottleSection">
+    <!-- Milk Bottle Section (shown only when milk is recorded today) -->
+    <div class="milk-bottle-section" id="milkBottleSection" style="display:none">
       <div class="stats-label">🍼 本日のミルク摂取量</div>
       <div class="milk-bottle-layout">
         <div>
@@ -1399,7 +1399,18 @@
     }
 
     function renderBottle() {
-      const total = calcTodayMilkMl();
+      const total   = calcTodayMilkMl();
+      const section = document.getElementById('milkBottleSection');
+
+      if (total === 0) {
+        section.style.display = 'none';
+        bottleCurrentY = 200;
+        if (bottleAnimId) { cancelAnimationFrame(bottleAnimId); bottleAnimId = null; }
+        document.getElementById('bottleWaveGroup').setAttribute('transform', 'translate(0,200)');
+        return;
+      }
+      section.style.display = 'block';
+
       const goal  = milkDailyGoal || 700;
       const pct   = Math.min(1, goal > 0 ? total / goal : 0);
 
@@ -1409,8 +1420,8 @@
       document.getElementById('milkPctBar').style.width      = `${Math.round(pct * 100)}%`;
 
       const BODY_TOP = 68, BODY_BOTTOM = 174;
-      const fillH  = pct * (BODY_BOTTOM - BODY_TOP);
-      const targetY = pct > 0 ? (BODY_BOTTOM - fillH - 4) : 200;
+      const fillH   = pct * (BODY_BOTTOM - BODY_TOP);
+      const targetY = BODY_BOTTOM - fillH - 4;
       animateBottleTo(targetY);
 
       const celEl = document.getElementById('milkCelebration');
