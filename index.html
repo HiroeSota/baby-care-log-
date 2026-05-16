@@ -463,6 +463,73 @@
     }
     .error-toast.show { opacity: 1; pointer-events: auto; }
 
+    /* ── Success Toast ── */
+    .success-toast {
+      position: fixed; bottom: 88px; left: 16px; right: 16px; z-index: 300;
+      background: #52c4a0; color: white; border-radius: 14px;
+      padding: 14px 16px; font-size: 0.85rem; text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .success-toast.show { opacity: 1; }
+
+    /* ── Toggle Switch ── */
+    .toggle-switch { position: relative; display: inline-block; width: 46px; height: 27px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border);
+      border-radius: 27px; cursor: pointer; transition: 0.25s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 21px; height: 21px;
+      left: 3px; bottom: 3px; background: white; border-radius: 50%;
+      transition: 0.25s; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--tab-active); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(19px); }
+
+    /* ── Notification Cards ── */
+    .notif-card {
+      background: var(--bg-stats); border-radius: 16px;
+      padding: 14px 16px; margin-bottom: 10px;
+    }
+    .notif-card-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .notif-card-title { font-size: 0.9rem; font-weight: bold; color: var(--label-txt); }
+    .notif-options { margin-top: 14px; }
+    .notif-mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .notif-mode-btn {
+      padding: 9px 4px; border: 2px solid var(--option-border);
+      border-radius: 12px; background: var(--option-bg);
+      font-size: 0.82rem; font-weight: bold; color: var(--label-txt);
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .notif-mode-btn.active { background: var(--option-sel); border-color: var(--option-sel-border); }
+    .notif-info {
+      font-size: 0.78rem; color: var(--label-txt); line-height: 1.7;
+      background: var(--bg-card); border-radius: 10px; padding: 10px 12px;
+    }
+    .notif-info.warn { color: var(--sub-txt); font-style: italic; }
+    .notif-timer-row {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 10px; flex-wrap: wrap;
+    }
+    .notif-timer-input {
+      width: 52px; padding: 8px 4px; text-align: center;
+      background: var(--input-bg); border: 1.5px solid var(--input-border);
+      border-radius: 10px; font-size: 1rem; color: var(--label-txt);
+      font-family: inherit; outline: none;
+    }
+    .notif-timer-label { font-size: 0.82rem; color: var(--sub-txt); }
+    .notif-save-btn {
+      padding: 8px 14px; background: var(--option-sel);
+      border: 1.5px solid var(--option-sel-border);
+      border-radius: 10px; color: var(--tab-active);
+      font-size: 0.82rem; font-weight: bold;
+      cursor: pointer; font-family: inherit; margin-left: auto;
+    }
+
     /* ── Data tab ── */
     .data-section { padding: 16px 16px 32px; }
     .data-period-label {
@@ -798,7 +865,7 @@
 
   <!-- ── Modal: Account ── -->
   <div class="modal-backdrop" id="accountModal" onclick="if(event.target===this)closeAccountModal()">
-    <div class="modal-sheet">
+    <div class="modal-sheet modal-sheet-scroll">
       <div class="modal-handle"></div>
       <div class="modal-title">⚙️ 設定</div>
       <div class="account-section">
@@ -813,6 +880,66 @@
           <div class="invite-code-value" id="accountCodeDisplay" style="font-size:1.5rem">------</div>
         </div>
       </div>
+
+      <!-- 通知設定 -->
+      <div class="account-section">
+        <div class="account-label">🔔 予測通知</div>
+
+        <!-- 授乳通知カード -->
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <div class="notif-card-title">🍼 授乳予測通知</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="nursingNotifToggle" onchange="onNotifToggle('nursing')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="notif-options" id="nursingNotifOptions" style="display:none">
+            <div class="notif-mode-row">
+              <button class="notif-mode-btn" id="nursingModeAuto" onclick="setNotifMode('nursing','auto')">📊 自動予測</button>
+              <button class="notif-mode-btn" id="nursingModeManual" onclick="setNotifMode('nursing','manual')">⏱ 手動タイマー</button>
+            </div>
+            <div id="nursingAutoInfo" class="notif-info" style="display:none"></div>
+            <div id="nursingManualInput" style="display:none">
+              <div class="notif-timer-row">
+                <input class="notif-timer-input" type="number" id="nursingManualH" min="0" max="12" placeholder="3">
+                <span class="notif-timer-label">時間</span>
+                <input class="notif-timer-input" type="number" id="nursingManualM" min="0" max="59" placeholder="0">
+                <span class="notif-timer-label">分後に通知</span>
+                <button class="notif-save-btn" onclick="saveManualTimer('nursing')">設定</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 睡眠通知カード -->
+        <div class="notif-card">
+          <div class="notif-card-header">
+            <div class="notif-card-title">🌙 睡眠予測通知</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="sleepNotifToggle" onchange="onNotifToggle('sleep')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="notif-options" id="sleepNotifOptions" style="display:none">
+            <div class="notif-mode-row">
+              <button class="notif-mode-btn" id="sleepModeAuto" onclick="setNotifMode('sleep','auto')">📊 自動予測</button>
+              <button class="notif-mode-btn" id="sleepModeManual" onclick="setNotifMode('sleep','manual')">⏱ 手動タイマー</button>
+            </div>
+            <div id="sleepAutoInfo" class="notif-info" style="display:none"></div>
+            <div id="sleepManualInput" style="display:none">
+              <div class="notif-timer-row">
+                <input class="notif-timer-input" type="number" id="sleepManualH" min="0" max="12" placeholder="2">
+                <span class="notif-timer-label">時間</span>
+                <input class="notif-timer-input" type="number" id="sleepManualM" min="0" max="59" placeholder="0">
+                <span class="notif-timer-label">分後に通知</span>
+                <button class="notif-save-btn" onclick="saveManualTimer('sleep')">設定</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="modal-actions" style="flex-direction:column;gap:10px">
         <button class="btn-confirm" onclick="saveBabyName()">名前を保存する ✓</button>
         <button class="btn-logout" onclick="handleSignOut()">ログアウト</button>
@@ -893,6 +1020,9 @@
   <!-- Error Toast -->
   <div id="errorToast" class="error-toast"></div>
 
+  <!-- Success Toast -->
+  <div id="successToast" class="success-toast"></div>
+
   <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -925,6 +1055,13 @@
     let snackbarTimer       = null;
     let wasLoggedIn         = false;
     let errorToastTimer     = null;
+    let successToastTimer   = null;
+
+    let notifSettings = {
+      nursing: { enabled: false, mode: 'auto', manualH: 3, manualM: 0 },
+      sleep:   { enabled: false, mode: 'auto', manualH: 2, manualM: 0 }
+    };
+    let notifTimers = { nursing: null, sleep: null };
 
     let sleepTimer          = null;
     let selectedNursingType = null;
@@ -995,6 +1132,223 @@
       el.textContent = msg;
       el.classList.add('show');
       errorToastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+    }
+
+    function showSuccessToast(msg) {
+      clearTimeout(successToastTimer);
+      const el = document.getElementById('successToast');
+      el.textContent = msg;
+      el.classList.add('show');
+      successToastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    // ── Notification System ───────────────────────────────
+
+    async function loadNotifSettings() {
+      try {
+        const doc = await settingsDoc('notif-settings').get();
+        if (doc.exists) {
+          const saved = JSON.parse(doc.data().value);
+          notifSettings.nursing = { ...notifSettings.nursing, ...(saved.nursing || {}) };
+          notifSettings.sleep   = { ...notifSettings.sleep,   ...(saved.sleep   || {}) };
+        }
+      } catch (err) { console.error('loadNotifSettings:', err); }
+    }
+
+    async function saveNotifSettings() {
+      try {
+        await settingsDoc('notif-settings').set({ value: JSON.stringify(notifSettings) });
+      } catch (err) { handleFirestoreError(err); }
+    }
+
+    async function requestNotifPermission() {
+      if (!('Notification' in window)) return false;
+      if (Notification.permission === 'granted') return true;
+      if (Notification.permission === 'denied')  return false;
+      const result = await Notification.requestPermission();
+      return result === 'granted';
+    }
+
+    function fireNotification(title, body) {
+      if (Notification.permission !== 'granted') return;
+      new Notification(title, { body });
+    }
+
+    function hasEnoughData(type) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 5);
+      const relevant = logs.filter(l => {
+        if (type === 'nursing') return l.type === 'nursing' && new Date(l.timestamp) >= cutoff;
+        return l.type === 'sleep' && l.subtype === 'end' && new Date(l.timestamp) >= cutoff;
+      });
+      const days = new Set(relevant.map(l => new Date(l.timestamp).toDateString()));
+      return days.size >= 3;
+    }
+
+    function calcAvgNursingInterval() {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 5);
+      const sorted = logs
+        .filter(l => l.type === 'nursing' && new Date(l.timestamp) >= cutoff)
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      if (sorted.length < 4) return null;
+      const intervals = [];
+      for (let i = 1; i < sorted.length; i++) {
+        const diff = (new Date(sorted[i].timestamp) - new Date(sorted[i-1].timestamp)) / 60000;
+        if (diff >= 30 && diff <= 360) intervals.push(diff);
+      }
+      if (intervals.length < 3) return null;
+      return intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    }
+
+    function calcAvgAwakeTime() {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 5);
+      const ends   = logs.filter(l => l.type === 'sleep' && l.subtype === 'end'   && new Date(l.timestamp) >= cutoff)
+                         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const starts = logs.filter(l => l.type === 'sleep' && l.subtype === 'start' && new Date(l.timestamp) >= cutoff)
+                         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      if (ends.length < 2 || starts.length < 2) return null;
+      const periods = [];
+      for (const e of ends) {
+        const endT = new Date(e.timestamp);
+        const nextS = starts.find(s => new Date(s.timestamp) > endT);
+        if (nextS) {
+          const diff = (new Date(nextS.timestamp) - endT) / 60000;
+          if (diff >= 30 && diff <= 300) periods.push(diff);
+        }
+      }
+      if (periods.length < 2) return null;
+      return periods.reduce((a, b) => a + b, 0) / periods.length;
+    }
+
+    function fmtMinutes(min) {
+      const h = Math.floor(min / 60), m = Math.round(min % 60);
+      return h > 0 ? `${h}時間${m > 0 ? m + '分' : ''}` : `${m}分`;
+    }
+
+    function cancelNotifTimer(type) {
+      if (notifTimers[type]) { clearTimeout(notifTimers[type]); notifTimers[type] = null; }
+    }
+
+    function scheduleNotif(type) {
+      cancelNotifTimer(type);
+      const s = notifSettings[type];
+      if (!s.enabled) return;
+
+      let delayMs;
+
+      if (s.mode === 'auto') {
+        if (!hasEnoughData(type)) return;
+        const avg = type === 'nursing' ? calcAvgNursingInterval() : calcAvgAwakeTime();
+        if (!avg) return;
+        const lastLog = type === 'nursing'
+          ? logs.find(l => l.type === 'nursing')
+          : logs.find(l => l.type === 'sleep' && l.subtype === 'end');
+        if (!lastLog) return;
+        const predicted = new Date(new Date(lastLog.timestamp).getTime() + avg * 60000);
+        const notifAt   = new Date(predicted.getTime() - 20 * 60000);
+        delayMs = notifAt - Date.now();
+      } else {
+        const totalMin = s.manualH * 60 + s.manualM;
+        if (totalMin <= 0) return;
+        const lastLog = type === 'nursing'
+          ? logs.find(l => l.type === 'nursing')
+          : logs.find(l => l.type === 'sleep' && l.subtype === 'end');
+        const base = lastLog ? new Date(lastLog.timestamp) : new Date();
+        delayMs = base.getTime() + totalMin * 60000 - Date.now();
+      }
+
+      if (delayMs <= 0) return;
+
+      notifTimers[type] = setTimeout(() => {
+        if (type === 'nursing') {
+          fireNotification('🍼 授乳の時期かもしれません',
+            'そろそろ授乳の時期かもしれません。お子さんの様子を確認してみてください。');
+        } else {
+          fireNotification('🌙 眠くなる頃かもしれません',
+            'そろそろ眠くなる時期かもしれません。ゆっくり休ませてあげてください。');
+        }
+        scheduleNotif(type);
+      }, delayMs);
+    }
+
+    function rescheduleNotifications() {
+      scheduleNotif('nursing');
+      scheduleNotif('sleep');
+    }
+
+    function updateNotifModeUI(type) {
+      const s = notifSettings[type];
+      document.getElementById(`${type}ModeAuto`).classList.toggle('active',   s.mode === 'auto');
+      document.getElementById(`${type}ModeManual`).classList.toggle('active', s.mode === 'manual');
+
+      const autoInfo    = document.getElementById(`${type}AutoInfo`);
+      const manualInput = document.getElementById(`${type}ManualInput`);
+
+      if (s.mode === 'auto') {
+        manualInput.style.display = 'none';
+        autoInfo.style.display    = 'block';
+        if (hasEnoughData(type)) {
+          const avg = type === 'nursing' ? calcAvgNursingInterval() : calcAvgAwakeTime();
+          autoInfo.className = 'notif-info';
+          autoInfo.innerHTML = avg
+            ? `📊 直近5日間の平均間隔：<strong>${fmtMinutes(avg)}</strong><br>予測時刻の20分前にそっとお知らせします。`
+            : '記録データを分析中です。もうしばらくお待ちください。';
+        } else {
+          autoInfo.className   = 'notif-info warn';
+          autoInfo.textContent = '自動予測には3日分以上の記録が必要です。記録を続けていただくことで、まもなくご利用いただけるようになります。';
+        }
+      } else {
+        autoInfo.style.display    = 'none';
+        manualInput.style.display = 'block';
+        document.getElementById(`${type}ManualH`).value = s.manualH;
+        document.getElementById(`${type}ManualM`).value = s.manualM;
+      }
+    }
+
+    function updateNotifUI() {
+      ['nursing', 'sleep'].forEach(type => {
+        const s = notifSettings[type];
+        document.getElementById(`${type}NotifToggle`).checked = s.enabled;
+        document.getElementById(`${type}NotifOptions`).style.display = s.enabled ? 'block' : 'none';
+        if (s.enabled) updateNotifModeUI(type);
+      });
+    }
+
+    async function onNotifToggle(type) {
+      const enabled = document.getElementById(`${type}NotifToggle`).checked;
+      if (enabled) {
+        const granted = await requestNotifPermission();
+        if (!granted) {
+          document.getElementById(`${type}NotifToggle`).checked = false;
+          showErrorToast('通知の許可が必要です。ブラウザの設定から通知を許可してください。');
+          return;
+        }
+      }
+      notifSettings[type].enabled = enabled;
+      await saveNotifSettings();
+      document.getElementById(`${type}NotifOptions`).style.display = enabled ? 'block' : 'none';
+      if (enabled) updateNotifModeUI(type);
+      scheduleNotif(type);
+    }
+
+    async function setNotifMode(type, mode) {
+      notifSettings[type].mode = mode;
+      await saveNotifSettings();
+      updateNotifModeUI(type);
+      scheduleNotif(type);
+    }
+
+    async function saveManualTimer(type) {
+      const h = Math.max(0, parseInt(document.getElementById(`${type}ManualH`).value) || 0);
+      const m = Math.max(0, Math.min(59, parseInt(document.getElementById(`${type}ManualM`).value) || 0));
+      if (h === 0 && m === 0) { showErrorToast('時間または分を入力してください。'); return; }
+      notifSettings[type].manualH = h;
+      notifSettings[type].manualM = m;
+      await saveNotifSettings();
+      scheduleNotif(type);
+      showSuccessToast(`タイマーを${h > 0 ? h + '時間' : ''}${m > 0 ? m + '分' : ''}に設定しました ✓`);
     }
 
     function handleFirestoreError(err) {
@@ -1399,6 +1753,7 @@
             document.getElementById('accountCodeDisplay').textContent = '取得失敗';
           });
       }
+      updateNotifUI();
       document.getElementById('accountModal').classList.add('open');
       setTimeout(() => document.getElementById('babyNameInput').focus(), 300);
     }
@@ -1861,6 +2216,8 @@
         }
       }
 
+      await loadNotifSettings();
+
       updateHeaderName();
       updateSleepButton();
       if (activeSleep) sleepTimer = setInterval(updateSleepButton, 30000);
@@ -1873,6 +2230,7 @@
           renderLogs();
           renderStats();
           if (selectedCalDate) renderCalendar();
+          rescheduleNotifications();
         },
         err => {
           console.error('Snapshot listener error:', err);
