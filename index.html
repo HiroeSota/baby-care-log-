@@ -600,6 +600,29 @@
     }
     .chart-title { font-size: 0.85rem; font-weight: bold; color: var(--label-txt); margin-bottom: 10px; }
     .chart-canvas { width: 100%; display: block; }
+    .chart-sub-label { font-size: 0.72rem; color: var(--sub-txt); margin: 10px 0 4px; }
+
+    /* ── Growth Section ── */
+    .growth-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .btn-growth-add {
+      font-size: 0.78rem; font-weight: 600;
+      background: var(--option-sel); border: 1.5px solid var(--option-sel-border);
+      color: var(--tab-active); border-radius: 10px; padding: 6px 12px; cursor: pointer;
+    }
+    .growth-empty { text-align: center; color: var(--empty-txt); font-size: 0.82rem; padding: 18px 0; line-height: 1.7; }
+    .growth-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+    .growth-item {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg); border-radius: 10px; padding: 9px 12px;
+      font-size: 0.82rem;
+    }
+    .growth-item-date { color: var(--sub-txt); min-width: 54px; }
+    .growth-item-vals { flex: 1; color: var(--label-txt); font-weight: 600; }
+    .growth-item-del {
+      color: var(--delete-c); cursor: pointer; padding: 4px 6px;
+      background: none; border: none; font-size: 1rem; line-height: 1;
+    }
+    .growth-item-del:hover { color: var(--delete-h); }
 
     /* ── Snackbar (undo delete) ── */
     .snackbar {
@@ -648,6 +671,59 @@
     @keyframes celebPop {
       from { transform: scale(0.8); opacity: 0; }
       to   { transform: scale(1);   opacity: 1; }
+    }
+
+    /* ── Baby Profile ── */
+    .profile-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .profile-field { flex: 1; }
+    .profile-field-label { font-size: 0.72rem; color: var(--sub-txt); margin-bottom: 4px; }
+    .profile-field-unit { display: flex; gap: 6px; align-items: center; }
+    .profile-field-unit span { font-size: 0.85rem; color: var(--sub-txt); white-space: nowrap; }
+    .age-badge {
+      display: inline-block;
+      font-size: 0.72rem; color: var(--label-txt);
+      background: var(--bg-stats); border-radius: 8px;
+      padding: 4px 10px; margin-top: 6px;
+    }
+    .profile-update { font-size: 0.68rem; color: var(--sub-txt); text-align: right; margin-top: 6px; }
+    .milk-goal-auto-box {
+      background: var(--bg-stats); border-radius: 14px;
+      padding: 14px 16px; text-align: center; margin-bottom: 8px;
+      transition: background 0.3s;
+    }
+    .milk-goal-auto-val { font-size: 1.5rem; font-weight: bold; color: var(--label-txt); }
+    .milk-goal-auto-hint { font-size: 0.7rem; color: var(--sub-txt); margin-top: 4px; line-height: 1.5; }
+    /* ── Prediction Cards ── */
+    .prediction-cards {
+      display: flex; gap: 10px;
+      padding: 0 20px 12px;
+    }
+    .prediction-card {
+      flex: 1;
+      background: var(--bg-stats);
+      border-radius: 16px;
+      padding: 12px 14px;
+      transition: background 0.3s;
+    }
+    .pred-label {
+      font-size: 0.7rem;
+      color: var(--sub-txt);
+      margin-bottom: 5px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .pred-time {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--label-txt);
+      line-height: 1.1;
+      margin-bottom: 3px;
+    }
+    .pred-until { font-size: 0.7rem; color: var(--sub-txt); }
+    .pred-nodata {
+      font-size: 0.68rem;
+      color: var(--sub-txt);
+      line-height: 1.55;
     }
   </style>
 </head>
@@ -707,6 +783,20 @@
         <span class="btn-icon" id="sleepIcon">🌙</span>
         <span class="btn-label" id="sleepLabel">ねんね開始</span>
       </button>
+    </div>
+
+    <!-- Prediction Cards -->
+    <div class="prediction-cards">
+      <div class="prediction-card">
+        <div class="pred-label">🍼 次の授乳予測</div>
+        <div id="predNursingTime" class="pred-time">--:--</div>
+        <div id="predNursingUntil" class="pred-until"></div>
+      </div>
+      <div class="prediction-card">
+        <div class="pred-label">🌙 次のねんね予測</div>
+        <div id="predSleepTime" class="pred-time">--:--</div>
+        <div id="predSleepUntil" class="pred-until"></div>
+      </div>
     </div>
 
     <!-- Milk Donut Section (shown only when milk is recorded today) -->
@@ -793,6 +883,24 @@
       <div class="chart-section">
         <div class="chart-title">🌿 おむつ交換回数（日別）</div>
         <canvas id="chartDiaper" class="chart-canvas"></canvas>
+      </div>
+
+      <!-- 成長グラフ -->
+      <div class="chart-section" id="growthSection">
+        <div class="growth-header">
+          <div class="chart-title" style="margin-bottom:0">📈 成長記録</div>
+          <button class="btn-growth-add" onclick="openGrowthModal()">＋ 記録する</button>
+        </div>
+        <div id="growthEmpty" class="growth-empty">
+          ＋ 記録するをタップして<br>体重・身長を記録しましょう
+        </div>
+        <div id="growthCharts" style="display:none">
+          <div class="chart-sub-label">体重 (kg)</div>
+          <canvas id="chartWeight" class="chart-canvas"></canvas>
+          <div class="chart-sub-label" style="margin-top:14px">身長 (cm)</div>
+          <canvas id="chartHeight" class="chart-canvas"></canvas>
+        </div>
+        <div class="growth-list" id="growthList"></div>
       </div>
     </div>
   </div>
@@ -977,12 +1085,24 @@
         <div class="modal-title" style="margin-bottom:0">⚙️ 設定</div>
         <button onclick="closeAccountModal()" style="width:36px;height:36px;border:none;background:var(--cancel-bg);border-radius:50%;font-size:1rem;cursor:pointer;color:var(--cancel-txt);display:flex;align-items:center;justify-content:center">✕</button>
       </div>
+      <!-- 赤ちゃんプロフィール -->
       <div class="account-section">
-        <div class="account-label">赤ちゃんの名前</div>
-        <input class="text-input" type="text" id="babyNameInput"
-               placeholder="例：はな" maxlength="20"
-               onkeydown="if(event.key==='Enter')saveBabyName()">
+        <div class="account-label">👶 赤ちゃんプロフィール</div>
+        <div style="margin-bottom:10px">
+          <div class="profile-field-label">名前</div>
+          <input class="text-input" type="text" id="babyNameInput"
+                 placeholder="例：はな" maxlength="20">
+        </div>
+        <div style="margin-bottom:10px">
+          <div class="profile-field-label">生年月日</div>
+          <input class="text-input" type="date" id="babyBirthdateInput"
+                 onchange="updateAgeBadge()" style="width:100%">
+          <div id="ageBadge" style="display:none" class="age-badge"></div>
+        </div>
+        <button class="btn-confirm" onclick="saveBabyProfile()" style="width:100%;margin-top:4px">プロフィールを保存する ✓</button>
+        <div class="profile-update" id="profileUpdatedAt"></div>
       </div>
+
       <div class="account-section">
         <div class="account-label">家族コード（パートナーに共有）</div>
         <div class="invite-code-box" style="margin:0">
@@ -993,12 +1113,32 @@
       <!-- ミルク目標設定 -->
       <div class="account-section">
         <div class="account-label">🍼 1日のミルク目標量</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input class="text-input" type="number" id="milkGoalInput" inputmode="numeric" min="0" step="10" placeholder="例: 700" style="flex:1">
-          <span style="font-size:0.9rem;color:var(--sub-txt);white-space:nowrap">ml</span>
-          <button class="btn-join" onclick="saveMilkGoal()" style="padding:12px 16px;white-space:nowrap">保存</button>
+        <div class="notif-mode-row">
+          <button class="notif-mode-btn" id="milkGoalModeAuto"   onclick="setMilkGoalMode('auto')">🤖 自動計算</button>
+          <button class="notif-mode-btn" id="milkGoalModeManual" onclick="setMilkGoalMode('manual')">✏️ 手動設定</button>
         </div>
-        <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">授乳・ミルク合計をドーナツグラフで表示します</div>
+        <div id="milkGoalAutoBox" style="display:none">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+            <input class="text-input" type="number" id="milkAutoWeightInput"
+                   inputmode="decimal" step="0.1" min="0" max="30"
+                   placeholder="赤ちゃんの体重 例: 5.2" style="flex:1"
+                   oninput="updateMilkGoalModeUI()">
+            <span style="font-size:0.9rem;color:var(--sub-txt);white-space:nowrap">kg</span>
+            <button class="btn-join" onclick="applyAutoMilkGoal()" style="padding:12px 16px;white-space:nowrap">設定</button>
+          </div>
+          <div class="milk-goal-auto-box">
+            <div class="milk-goal-auto-val" id="milkGoalAutoVal">-- ml</div>
+            <div class="milk-goal-auto-hint" id="milkGoalAutoHint">体重を入力すると自動で計算されます</div>
+          </div>
+        </div>
+        <div id="milkGoalManualBox">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="text-input" type="number" id="milkGoalInput" inputmode="numeric" min="0" step="10" placeholder="例: 700" style="flex:1">
+            <span style="font-size:0.9rem;color:var(--sub-txt);white-space:nowrap">ml</span>
+            <button class="btn-join" onclick="saveMilkGoal()" style="padding:12px 16px;white-space:nowrap">保存</button>
+          </div>
+          <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">授乳・ミルク合計をドーナツグラフで表示します</div>
+        </div>
       </div>
       <!-- おっぱい目安量 -->
       <div class="account-section">
@@ -1080,8 +1220,43 @@
       </div>
 
       <div class="modal-actions" style="flex-direction:column;gap:10px">
-        <button class="btn-confirm" onclick="saveBabyName()">名前を保存する ✓</button>
         <button class="btn-logout" onclick="handleSignOut()">ログアウト</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Growth ── -->
+  <div class="modal-backdrop" id="growthModal" onclick="if(event.target===this)closeGrowthModal()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">成長を記録する</div>
+      <div style="margin-bottom:14px">
+        <div class="account-label">記録日</div>
+        <input class="text-input" type="date" id="growthDateInput" style="width:100%">
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:24px">
+        <div style="flex:1">
+          <div class="account-label">体重</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input class="text-input" type="number" id="growthWeightInput"
+                   inputmode="decimal" step="0.01" min="0" max="30"
+                   placeholder="例: 5.25" style="flex:1">
+            <span style="font-size:0.85rem;color:var(--sub-txt)">kg</span>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div class="account-label">身長</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input class="text-input" type="number" id="growthHeightInput"
+                   inputmode="decimal" step="0.1" min="0" max="120"
+                   placeholder="例: 58.5" style="flex:1">
+            <span style="font-size:0.85rem;color:var(--sub-txt)">cm</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeGrowthModal()">キャンセル</button>
+        <button class="btn-confirm" id="btnGrowthConfirm" onclick="saveGrowthLog()">記録する ✓</button>
       </div>
     </div>
   </div>
@@ -1218,7 +1393,10 @@
     let successToastTimer   = null;
 
     let milkDailyGoal       = 700;
+    let milkGoalMode        = 'manual'; // 'auto' | 'manual'
+    let babyProfile         = { birthdate: '', weight: null, height: null, updatedAt: null };
     let nursingMlPerSession = 100;
+    let growthLogs          = [];
     let bottleTargetPct     = 0;
     let bottleCurrentPct    = 0;
     let bottleRenderLoop    = null;
@@ -1323,8 +1501,119 @@
 
     // ── Notification System ───────────────────────────────
 
+    // ── Baby Profile ─────────────────────────────────────
+    function calcBabyAge(birthdateStr) {
+      if (!birthdateStr) return null;
+      const birth = new Date(birthdateStr);
+      const now   = new Date();
+      let years = now.getFullYear() - birth.getFullYear();
+      let months = now.getMonth() - birth.getMonth();
+      let days   = now.getDate() - birth.getDate();
+      if (days < 0) { months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+      if (months < 0) { years--; months += 12; }
+      const totalDays = Math.floor((now - birth) / 86400000);
+      return { years, months, days, totalDays };
+    }
+
+    function fmtAge(birthdateStr) {
+      const a = calcBabyAge(birthdateStr);
+      if (!a) return '';
+      if (a.totalDays < 30) return `生後${a.totalDays}日`;
+      if (a.years === 0)    return `生後${a.months}ヶ月${a.days > 0 ? a.days + '日' : ''}`;
+      return `${a.years}歳${a.months > 0 ? a.months + 'ヶ月' : ''}`;
+    }
+
+    function calcAutoMilkGoal(weightKg) {
+      return Math.round(weightKg * 150 / 10) * 10;
+    }
+
+    function updateAgeBadge() {
+      const val = document.getElementById('babyBirthdateInput').value;
+      const badge = document.getElementById('ageBadge');
+      if (val) { badge.textContent = fmtAge(val); badge.style.display = 'inline-block'; }
+      else      { badge.style.display = 'none'; }
+    }
+
+    function setMilkGoalMode(mode) {
+      milkGoalMode = mode;
+      settingsDoc('milk-goal-mode').set({ value: mode }).catch(() => {});
+      updateMilkGoalModeUI();
+    }
+
+    function updateMilkGoalModeUI() {
+      const isAuto = milkGoalMode === 'auto';
+      document.getElementById('milkGoalModeAuto').classList.toggle('active', isAuto);
+      document.getElementById('milkGoalModeManual').classList.toggle('active', !isAuto);
+      document.getElementById('milkGoalAutoBox').style.display   = isAuto  ? 'block' : 'none';
+      document.getElementById('milkGoalManualBox').style.display = !isAuto ? 'block' : 'none';
+
+      if (isAuto) {
+        const w        = parseFloat(document.getElementById('milkAutoWeightInput').value);
+        const autoVal  = document.getElementById('milkGoalAutoVal');
+        const autoHint = document.getElementById('milkGoalAutoHint');
+        if (w > 0) {
+          const computed      = calcAutoMilkGoal(w);
+          autoVal.textContent = `${computed} ml`;
+          autoHint.innerHTML  = `体重 ${w}kg × 150ml（小児科目安）<br>※ 離乳食開始後は手動で調整してください`;
+        } else {
+          autoVal.textContent  = '-- ml';
+          autoHint.textContent = '体重を入力すると自動で計算されます';
+        }
+      }
+    }
+
+    async function applyAutoMilkGoal() {
+      const w = parseFloat(document.getElementById('milkAutoWeightInput').value);
+      if (!w || w <= 0) { showErrorToast('体重を入力してください。'); return; }
+      babyProfile.weight = w;
+      milkDailyGoal = calcAutoMilkGoal(w);
+      try {
+        await Promise.all([
+          settingsDoc('baby-profile').set({ ...babyProfile }),
+          settingsDoc('milk-daily-goal').set({ value: milkDailyGoal })
+        ]);
+        renderBottle();
+        updateMilkGoalModeUI();
+        showSuccessToast(`目標を ${milkDailyGoal}ml に設定しました ✓`);
+      } catch (e) { handleFirestoreError(e); }
+    }
+
+    async function loadBabyProfile() {
+      try {
+        const [profileDoc, modeDoc] = await Promise.all([
+          settingsDoc('baby-profile').get(),
+          settingsDoc('milk-goal-mode').get()
+        ]);
+        if (profileDoc.exists) babyProfile = { ...babyProfile, ...profileDoc.data() };
+        if (modeDoc.exists)    milkGoalMode = modeDoc.data().value || 'manual';
+        if (milkGoalMode === 'auto' && babyProfile.weight > 0) {
+          milkDailyGoal = calcAutoMilkGoal(babyProfile.weight);
+        }
+      } catch (e) { /* use defaults */ }
+    }
+
+    async function saveBabyProfile() {
+      const name      = document.getElementById('babyNameInput').value.trim();
+      const birthdate = document.getElementById('babyBirthdateInput').value;
+      const updatedAt = new Date().toISOString();
+
+      babyProfile = { ...babyProfile, birthdate, updatedAt };
+
+      const nameOp = name ? settingsDoc('baby-name').set({ value: name }) : settingsDoc('baby-name').delete();
+      babyName = name;
+
+      try {
+        await Promise.all([nameOp, settingsDoc('baby-profile').set(babyProfile)]);
+        updateHeaderName();
+        showSuccessToast('プロフィールを保存しました ✓');
+        document.getElementById('profileUpdatedAt').textContent =
+          '最終更新：' + new Date(updatedAt).toLocaleDateString('ja-JP');
+      } catch (e) { handleFirestoreError(e); }
+    }
+
     // ── Milk Donut ───────────────────────────────────────
     async function loadMilkGoal() {
+      if (milkGoalMode === 'auto') return; // auto時はloadBabyProfileで計算済み
       try {
         const doc = await settingsDoc('milk-daily-goal').get();
         if (doc.exists && doc.data().value > 0) milkDailyGoal = doc.data().value;
@@ -1546,6 +1835,59 @@
       }
     }
 
+    function renderPredictionCards() {
+      function updateCard(type, timeElId, untilElId) {
+        const timeEl  = document.getElementById(timeElId);
+        const untilEl = document.getElementById(untilElId);
+        if (!timeEl) return;
+
+        if (!hasEnoughData(type)) {
+          timeEl.className  = 'pred-nodata';
+          timeEl.innerHTML  = '3日分以上の記録が溜まると<br>自動予測できます';
+          untilEl.textContent = '';
+          return;
+        }
+
+        const avg = type === 'nursing' ? calcAvgNursingInterval() : calcAvgAwakeTime();
+        if (!avg) {
+          timeEl.className = 'pred-nodata';
+          timeEl.innerHTML = 'もう少し記録を続けると<br>予測できます';
+          untilEl.textContent = '';
+          return;
+        }
+
+        const lastLog = type === 'nursing'
+          ? logs.find(l => l.type === 'nursing')
+          : logs.find(l => l.type === 'sleep' && l.subtype === 'end');
+
+        if (!lastLog) {
+          timeEl.className  = 'pred-time';
+          timeEl.textContent = '--:--';
+          untilEl.textContent = '';
+          return;
+        }
+
+        const predicted = new Date(new Date(lastLog.timestamp).getTime() + avg * 60000);
+        const diffMin   = (predicted - Date.now()) / 60000;
+        const hh = predicted.getHours().toString().padStart(2, '0');
+        const mm = predicted.getMinutes().toString().padStart(2, '0');
+
+        timeEl.className  = 'pred-time';
+        timeEl.textContent = `${hh}:${mm}`;
+
+        if (diffMin < -30) {
+          untilEl.textContent = 'そろそろかもしれません';
+        } else if (diffMin < 0) {
+          untilEl.textContent = '間もなく';
+        } else {
+          untilEl.textContent = `約${fmtMinutes(diffMin)}後`;
+        }
+      }
+
+      updateCard('nursing', 'predNursingTime', 'predNursingUntil');
+      updateCard('sleep',   'predSleepTime',   'predSleepUntil');
+    }
+
     async function loadNotifSettings() {
       const saved = localStorage.getItem('baby-care-notif-settings');
       if (saved) {
@@ -1581,8 +1923,9 @@
         if (type === 'nursing') return l.type === 'nursing' && new Date(l.timestamp) >= cutoff;
         return l.type === 'sleep' && l.subtype === 'end' && new Date(l.timestamp) >= cutoff;
       });
+      if (type === 'nursing') return relevant.length >= 3;
       const days = new Set(relevant.map(l => new Date(l.timestamp).toDateString()));
-      return days.size >= 3;
+      return days.size >= 2;
     }
 
     function calcAvgNursingInterval() {
@@ -1591,13 +1934,13 @@
       const sorted = logs
         .filter(l => l.type === 'nursing' && new Date(l.timestamp) >= cutoff)
         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      if (sorted.length < 4) return null;
+      if (sorted.length < 3) return null;
       const intervals = [];
       for (let i = 1; i < sorted.length; i++) {
         const diff = (new Date(sorted[i].timestamp) - new Date(sorted[i-1].timestamp)) / 60000;
-        if (diff >= 30 && diff <= 360) intervals.push(diff);
+        if (diff >= 20 && diff <= 720) intervals.push(diff); // 夜間ギャップも許容
       }
-      if (intervals.length < 3) return null;
+      if (intervals.length < 2) return null;
       return intervals.reduce((a, b) => a + b, 0) / intervals.length;
     }
 
@@ -1608,17 +1951,17 @@
                          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       const starts = logs.filter(l => l.type === 'sleep' && l.subtype === 'start' && new Date(l.timestamp) >= cutoff)
                          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-      if (ends.length < 2 || starts.length < 2) return null;
+      if (ends.length < 1 || starts.length < 1) return null;
       const periods = [];
       for (const e of ends) {
         const endT = new Date(e.timestamp);
         const nextS = starts.find(s => new Date(s.timestamp) > endT);
         if (nextS) {
           const diff = (new Date(nextS.timestamp) - endT) / 60000;
-          if (diff >= 30 && diff <= 300) periods.push(diff);
+          if (diff >= 15 && diff <= 480) periods.push(diff);
         }
       }
-      if (periods.length < 2) return null;
+      if (periods.length < 1) return null;
       return periods.reduce((a, b) => a + b, 0) / periods.length;
     }
 
@@ -1847,6 +2190,208 @@
       if (name === 'data') renderDataTab();
     }
 
+    // ── Growth Records ────────────────────────────────────
+    function growthCol() {
+      return db.collection('families').doc(familyId).collection('growth');
+    }
+
+    async function loadGrowthLogs() {
+      try {
+        const snap = await growthCol().orderBy('date', 'asc').get();
+        growthLogs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (e) { growthLogs = []; }
+    }
+
+    function openGrowthModal() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('growthDateInput').value   = today;
+      document.getElementById('growthDateInput').max     = today;
+      document.getElementById('growthWeightInput').value = '';
+      document.getElementById('growthHeightInput').value = '';
+      document.getElementById('growthModal').classList.add('open');
+    }
+    function closeGrowthModal() { document.getElementById('growthModal').classList.remove('open'); }
+
+    async function saveGrowthLog() {
+      const date   = document.getElementById('growthDateInput').value;
+      const weight = parseFloat(document.getElementById('growthWeightInput').value) || null;
+      const height = parseFloat(document.getElementById('growthHeightInput').value) || null;
+      if (!date)          { showErrorToast('記録日を選んでください。'); return; }
+      if (!weight && !height) { showErrorToast('体重または身長を入力してください。'); return; }
+      try {
+        await growthCol().add({ date, weight, height, timestamp: new Date().toISOString() });
+        closeGrowthModal();
+        await loadGrowthLogs();
+        renderGrowthSection();
+        showSuccessToast('成長記録を保存しました ✓');
+      } catch (e) { handleFirestoreError(e); }
+    }
+
+    async function deleteGrowthLog(id) {
+      try {
+        await growthCol().doc(id).delete();
+        await loadGrowthLogs();
+        renderGrowthSection();
+      } catch (e) { handleFirestoreError(e); }
+    }
+
+    function renderGrowthSection() {
+      const hasWeight = growthLogs.some(g => g.weight != null);
+      const hasHeight = growthLogs.some(g => g.height != null);
+      const hasAny    = growthLogs.length > 0;
+
+      document.getElementById('growthEmpty').style.display  = hasAny ? 'none'  : 'block';
+      document.getElementById('growthCharts').style.display = hasAny ? 'block' : 'none';
+
+      if (hasAny) {
+        requestAnimationFrame(() => {
+          if (hasWeight) {
+            const wLogs  = growthLogs.filter(g => g.weight != null);
+            const labels = wLogs.map(g => fmtGrowthDate(g.date));
+            const vals   = wLogs.map(g => g.weight);
+            drawLineChart('chartWeight', labels, vals, '#ff8fab');
+          } else {
+            drawLineChartEmpty('chartWeight');
+          }
+          if (hasHeight) {
+            const hLogs  = growthLogs.filter(g => g.height != null);
+            const labels = hLogs.map(g => fmtGrowthDate(g.date));
+            const vals   = hLogs.map(g => g.height);
+            drawLineChart('chartHeight', labels, vals, '#7eb6d4');
+          } else {
+            drawLineChartEmpty('chartHeight');
+          }
+        });
+      }
+
+      // Record list (newest first, max 8)
+      const listEl = document.getElementById('growthList');
+      const sorted = [...growthLogs].reverse().slice(0, 8);
+      listEl.innerHTML = sorted.map(g => {
+        const vals = [
+          g.weight != null ? `⚖️ ${g.weight}kg` : null,
+          g.height != null ? `📏 ${g.height}cm`  : null
+        ].filter(Boolean).join('　');
+        return `<div class="growth-item">
+          <div class="growth-item-date">${fmtGrowthDate(g.date)}</div>
+          <div class="growth-item-vals">${vals}</div>
+          <button class="growth-item-del" onclick="deleteGrowthLog('${g.id}')">✕</button>
+        </div>`;
+      }).join('');
+    }
+
+    function fmtGrowthDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    }
+
+    function drawLineChart(canvasId, labels, values, color) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const W   = canvas.parentElement.clientWidth - 28;
+      const H   = 160;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridC  = isDark ? '#3a3a4a' : '#ececec';
+      const labelC = isDark ? '#888'    : '#aaa';
+      const valueC = isDark ? '#ccc'    : '#444';
+      const bgC    = isDark ? '#2a2f48' : '#ffffff';
+
+      const n = values.length;
+      const padL = 42, padR = 12, padT = 20, padB = 30;
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+
+      const minVal = Math.min(...values);
+      const maxVal = Math.max(...values);
+      const spread = maxVal - minVal || maxVal * 0.1 || 1;
+      const yMin   = minVal - spread * 0.2;
+      const yMax   = maxVal + spread * 0.15;
+      const yRange = yMax - yMin;
+
+      const toY = v  => padT + chartH - ((v - yMin) / yRange) * chartH;
+      const toX = i  => n === 1 ? padL + chartW / 2 : padL + (chartW / (n - 1)) * i;
+
+      // Grid + y-labels
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= 4; i++) {
+        const v = yMin + yRange * i / 4;
+        const y = toY(v);
+        ctx.strokeStyle = gridC;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke();
+        ctx.fillStyle = labelC;
+        ctx.font = `9px sans-serif`;
+        ctx.textAlign = 'right';
+        ctx.fillText(v < 10 ? v.toFixed(1) : Math.round(v), padL - 5, y + 3);
+      }
+
+      if (n >= 2) {
+        // Gradient fill
+        ctx.beginPath();
+        ctx.moveTo(toX(0), toY(values[0]));
+        for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(values[i]));
+        ctx.lineTo(toX(n - 1), padT + chartH);
+        ctx.lineTo(toX(0),     padT + chartH);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, padT, 0, padT + chartH);
+        grad.addColorStop(0, color + '55');
+        grad.addColorStop(1, color + '00');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Line
+        ctx.beginPath();
+        ctx.moveTo(toX(0), toY(values[0]));
+        for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(values[i]));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+
+      // Dots + value labels + x-labels
+      values.forEach((v, i) => {
+        const x = toX(i);
+        const y = toY(v);
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = color; ctx.fill();
+        ctx.strokeStyle = bgC; ctx.lineWidth = 2; ctx.stroke();
+
+        ctx.fillStyle = valueC;
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        const label = v < 10 ? v.toFixed(2) : v.toFixed(1);
+        ctx.fillText(label, x, y - 9);
+
+        ctx.fillStyle = labelC;
+        ctx.font = '9px sans-serif';
+        ctx.fillText(labels[i], x, H - padB + 15);
+      });
+    }
+
+    function drawLineChartEmpty(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.parentElement.clientWidth - 28;
+      const H = 60;
+      canvas.width  = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      ctx.fillStyle = isDark ? '#555a7a' : '#d4bbc2';
+      ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('記録なし', W / 2, H / 2 + 4);
+    }
+
     // ── Data tab ──────────────────────────────────────────
     function renderDataTab() {
       const today = new Date();
@@ -1892,6 +2437,8 @@
         drawBarChart('chartSleep',   labels, sleepH,     '#7eb6d4');
         drawBarChart('chartDiaper',  labels, diaperArr,  '#7ec89a');
       });
+
+      loadGrowthLogs().then(() => renderGrowthSection());
     }
 
     function drawBarChart(canvasId, labels, values, color) {
@@ -2034,7 +2581,7 @@
       if (idx === -1) return;
       pendingDelete = { id, log: logs[idx] };
       logs.splice(idx, 1);
-      renderLogs(); renderStats();
+      renderLogs(); renderStats(); renderBottle(); renderPredictionCards();
       if (selectedCalDate) renderCalendar();
       showSnackbar();
     }
@@ -2052,7 +2599,7 @@
       logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       pendingDelete = null;
       hideSnackbar();
-      renderLogs(); renderStats();
+      renderLogs(); renderStats(); renderBottle(); renderPredictionCards();
       if (selectedCalDate) renderCalendar();
     }
 
@@ -2176,10 +2723,19 @@
 
     // ── Account Modal ─────────────────────────────────────
     function openAccountModal() {
-      document.getElementById('babyNameInput').value = getBabyName();
-      document.getElementById('milkGoalInput').value    = milkDailyGoal || 700;
-      document.getElementById('nursingMlInput').value   = nursingMlPerSession || 100;
-      // Show family code
+      // プロフィール
+      document.getElementById('babyNameInput').value      = getBabyName();
+      document.getElementById('babyBirthdateInput').value = babyProfile.birthdate || '';
+      document.getElementById('babyBirthdateInput').max   = new Date().toISOString().split('T')[0];
+      updateAgeBadge();
+      document.getElementById('profileUpdatedAt').textContent =
+        babyProfile.updatedAt ? '最終更新：' + new Date(babyProfile.updatedAt).toLocaleDateString('ja-JP') : '';
+      // ミルク目標
+      document.getElementById('milkGoalInput').value         = milkDailyGoal || 700;
+      document.getElementById('milkAutoWeightInput').value   = babyProfile.weight != null ? babyProfile.weight : '';
+      document.getElementById('nursingMlInput').value        = nursingMlPerSession || 100;
+      updateMilkGoalModeUI();
+      // 家族コード
       if (familyId) {
         db.collection('families').doc(familyId).get()
           .then(doc => {
@@ -2541,7 +3097,7 @@
     function handleSignOut() {
       wasLoggedIn = false;
       if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
-      logs = []; activeSleep = null; babyName = ''; familyId = null;
+      logs = []; growthLogs = []; activeSleep = null; babyName = ''; familyId = null;
       closeAccountModal();
       firebase.auth().signOut();
     }
@@ -2657,6 +3213,7 @@
       }
 
       await loadNotifSettings();
+      await loadBabyProfile();
       await loadMilkGoal();
       await loadNursingMlPerSession();
 
@@ -2672,6 +3229,7 @@
           renderLogs();
           renderStats();
           renderBottle();
+          renderPredictionCards();
           if (selectedCalDate) renderCalendar();
           rescheduleNotifications();
         },
