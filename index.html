@@ -2355,35 +2355,46 @@
       const bgC    = isDark ? '#2a2f48' : '#ffffff';
 
       const n = values.length;
-      const padL = 42, padR = 12, padT = 20, padB = 30;
+      const padL = 46, padR = 12, padT = 24, padB = 30;
       const chartW = W - padL - padR;
       const chartH = H - padT - padB;
 
       const minVal = Math.min(...values);
       const maxVal = Math.max(...values);
-      const spread = maxVal - minVal || maxVal * 0.1 || 1;
-      const yMin   = minVal - spread * 0.2;
-      const yMax   = maxVal + spread * 0.15;
-      const yRange = yMax - yMin;
 
-      const toY = v  => padT + chartH - ((v - yMin) / yRange) * chartH;
-      const toX = i  => n === 1 ? padL + chartW / 2 : padL + (chartW / (n - 1)) * i;
+      // Y軸をキリのいい数値に揃える
+      function niceStep(rawRange) {
+        const candidates = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500];
+        const target = rawRange / 4;
+        return candidates.find(c => c >= target) || 500;
+      }
+      const rawRange = maxVal - minVal || maxVal * 0.1 || 1;
+      const step  = niceStep(rawRange);
+      const yMin  = Math.floor(minVal / step) * step;
+      const yMax  = Math.ceil(maxVal  / step) * step;
+      const yRange = yMax - yMin || step;
 
-      // Grid + y-labels
+      const toY = v => padT + chartH - ((v - yMin) / yRange) * chartH;
+      const toX = i => n === 1 ? padL + chartW / 2 : padL + (chartW / (n - 1)) * i;
+
+      // グリッド + Y軸ラベル
       ctx.lineWidth = 0.5;
-      for (let i = 0; i <= 4; i++) {
-        const v = yMin + yRange * i / 4;
+      const tickCount = Math.round((yMax - yMin) / step);
+      for (let t = 0; t <= tickCount; t++) {
+        const v = yMin + step * t;
         const y = toY(v);
+        if (y < padT - 2 || y > padT + chartH + 2) continue;
         ctx.strokeStyle = gridC;
         ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y); ctx.stroke();
         ctx.fillStyle = labelC;
-        ctx.font = `9px sans-serif`;
+        ctx.font = '9px sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(v < 10 ? v.toFixed(1) : Math.round(v), padL - 5, y + 3);
+        const tickLabel = step < 1 ? v.toFixed(1) : Math.round(v).toString();
+        ctx.fillText(tickLabel, padL - 5, y + 3);
       }
 
       if (n >= 2) {
-        // Gradient fill
+        // グラデーション塗り
         ctx.beginPath();
         ctx.moveTo(toX(0), toY(values[0]));
         for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(values[i]));
@@ -2396,7 +2407,7 @@
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // Line
+        // 折れ線
         ctx.beginPath();
         ctx.moveTo(toX(0), toY(values[0]));
         for (let i = 1; i < n; i++) ctx.lineTo(toX(i), toY(values[i]));
@@ -2406,23 +2417,41 @@
         ctx.stroke();
       }
 
-      // Dots + value labels + x-labels
+      // 値ラベルの重なり防止：直前のラベル位置と近すぎたら上下を交互に
+      const minIdx = values.indexOf(Math.min(...values));
+      const maxIdx = values.indexOf(Math.max(...values));
+      const showLabel = new Set([0, n - 1, minIdx, maxIdx]);
+      let lastLabelX = -999;
+
       values.forEach((v, i) => {
         const x = toX(i);
         const y = toY(v);
+
+        // ドット
         ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
         ctx.fillStyle = color; ctx.fill();
         ctx.strokeStyle = bgC; ctx.lineWidth = 2; ctx.stroke();
 
-        ctx.fillStyle = valueC;
-        ctx.font = 'bold 9px sans-serif';
-        ctx.textAlign = 'center';
-        const label = v < 10 ? v.toFixed(2) : v.toFixed(1);
-        ctx.fillText(label, x, y - 9);
+        // 値ラベル（重なりを防ぐため間隔チェック）
+        const tooClose = (x - lastLabelX) < 32;
+        if (showLabel.has(i) && !tooClose) {
+          const lbl = step < 1 ? v.toFixed(1) : Math.round(v).toString();
+          const above = y - padT > 14;
+          ctx.fillStyle = valueC;
+          ctx.font = 'bold 9.5px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(lbl, x, above ? y - 9 : y + 16);
+          lastLabelX = x;
+        }
 
-        ctx.fillStyle = labelC;
-        ctx.font = '9px sans-serif';
-        ctx.fillText(labels[i], x, H - padB + 15);
+        // X軸ラベル（込み合うときは間引く）
+        const xLabelStep = Math.max(1, Math.ceil(n / Math.floor(chartW / 34)));
+        if (i % xLabelStep === 0 || i === n - 1) {
+          ctx.fillStyle = labelC;
+          ctx.font = '9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(labels[i], x, H - padB + 15);
+        }
       });
     }
 
