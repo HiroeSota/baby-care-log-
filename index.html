@@ -2025,7 +2025,9 @@
 
     function fmtMinutes(min) {
       const h = Math.floor(min / 60), m = Math.round(min % 60);
-      return h > 0 ? `${h}時間${m > 0 ? m + '分' : ''}` : `${m}分`;
+      if (h > 0 && m > 0) return `${h}時間${m}分`;
+      if (h > 0) return `${h}時間`;
+      return `${m}分`;
     }
 
     function cancelNotifTimer(type) {
@@ -2261,7 +2263,8 @@
     }
 
     function openGrowthModal() {
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
       document.getElementById('growthDateInput').value   = today;
       document.getElementById('growthDateInput').max     = today;
       document.getElementById('growthWeightInput').value = '';
@@ -2290,7 +2293,11 @@
         await growthCol().doc(id).delete();
         await loadGrowthLogs();
         renderGrowthSection();
-      } catch (e) { handleFirestoreError(e); }
+        showSuccessToast('記録を削除しました ✓');
+      } catch (e) {
+        showErrorToast('削除に失敗しました。もう一度お試しください。');
+        handleFirestoreError(e);
+      }
     }
 
     function renderGrowthSection() {
