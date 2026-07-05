@@ -788,9 +788,9 @@
     <!-- Prediction Cards -->
     <div class="prediction-cards">
       <div class="prediction-card">
-        <div class="pred-label">🍼 次の授乳予測</div>
-        <div id="predNursingTime" class="pred-time">--:--</div>
-        <div id="predNursingUntil" class="pred-until"></div>
+        <div class="pred-label">🍶 次のミルク可能時刻</div>
+        <div id="predMilkTime" class="pred-time">--:--</div>
+        <div id="predMilkUntil" class="pred-until"></div>
       </div>
       <div class="prediction-card">
         <div class="pred-label">🌙 次のねんね予測</div>
@@ -1140,6 +1140,16 @@
           <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">授乳・ミルク合計をドーナツグラフで表示します</div>
         </div>
       </div>
+      <!-- ミルク次回間隔 -->
+      <div class="account-section">
+        <div class="account-label">⏱ 次のミルクまでの間隔</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="text-input" type="number" id="milkNextIntervalInput" inputmode="numeric" min="1" max="12" step="1" placeholder="例: 3" style="flex:1">
+          <span style="font-size:0.9rem;color:var(--sub-txt);white-space:nowrap">時間</span>
+          <button class="btn-join" onclick="saveMilkNextInterval()" style="padding:12px 16px;white-space:nowrap">保存</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--time-txt);margin-top:6px">ミルクをあげた時刻から次に飲める時刻を計算します（デフォルト：3時間）</div>
+      </div>
       <!-- おっぱい目安量 -->
       <div class="account-section">
         <div class="account-label">🤱 おっぱい1回あたりの目安量</div>
@@ -1394,6 +1404,7 @@
 
     let milkDailyGoal       = 700;
     let milkGoalMode        = 'manual'; // 'auto' | 'manual'
+    let milkNextIntervalH   = 3; // 次のミルクまでの間隔（時間）
     let babyProfile         = { birthdate: '', weight: null, height: null, updatedAt: null };
     let nursingMlPerSession = 100;
     let growthLogs          = [];
@@ -1631,6 +1642,24 @@
       } catch (e) { handleFirestoreError(e); }
     }
 
+    async function loadMilkNextInterval() {
+      try {
+        const doc = await settingsDoc('milk-next-interval-h').get();
+        if (doc.exists && doc.data().value > 0) milkNextIntervalH = doc.data().value;
+      } catch (e) { /* use default */ }
+    }
+
+    async function saveMilkNextInterval() {
+      const val = parseInt(document.getElementById('milkNextIntervalInput').value, 10);
+      if (!val || val <= 0 || val > 12) { showErrorToast('1〜12の時間を入力してください。'); return; }
+      milkNextIntervalH = val;
+      try {
+        await settingsDoc('milk-next-interval-h').set({ value: val });
+        renderPredictionCards();
+        showSuccessToast(`次のミルクまでの間隔を ${val}時間 に設定しました ✓`);
+      } catch (e) { handleFirestoreError(e); }
+    }
+
     async function loadNursingMlPerSession() {
       try {
         const doc = await settingsDoc('nursing-ml-per-session').get();
@@ -1836,19 +1865,44 @@
     }
 
     function renderPredictionCards() {
-      function updateCard(type, timeElId, untilElId) {
-        const timeEl  = document.getElementById(timeElId);
-        const untilEl = document.getElementById(untilElId);
+      // ── ミルク可能時刻カード ──
+      const milkTimeEl  = document.getElementById('predMilkTime');
+      const milkUntilEl = document.getElementById('predMilkUntil');
+      if (milkTimeEl) {
+        const lastMilk = logs.find(l => l.type === 'nursing' && l.subtype === 'milk');
+        if (!lastMilk) {
+          milkTimeEl.className = 'pred-nodata';
+          milkTimeEl.innerHTML = 'ミルクを記録すると<br>次回可能時刻を表示します';
+          milkUntilEl.textContent = '';
+        } else {
+          const predicted = new Date(new Date(lastMilk.timestamp).getTime() + milkNextIntervalH * 3600000);
+          const diffMin   = (predicted - Date.now()) / 60000;
+          const hh = predicted.getHours().toString().padStart(2, '0');
+          const mm = predicted.getMinutes().toString().padStart(2, '0');
+          milkTimeEl.className  = 'pred-time';
+          milkTimeEl.textContent = `${hh}:${mm}`;
+          if (diffMin <= 0) {
+            milkUntilEl.textContent = 'もうあげられます！';
+          } else {
+            milkUntilEl.textContent = `あと${fmtMinutes(diffMin)}`;
+          }
+        }
+      }
+
+      // ── ねんね予測カード ──
+      function updateSleepCard() {
+        const timeEl  = document.getElementById('predSleepTime');
+        const untilEl = document.getElementById('predSleepUntil');
         if (!timeEl) return;
 
-        if (!hasEnoughData(type)) {
+        if (!hasEnoughData('sleep')) {
           timeEl.className  = 'pred-nodata';
           timeEl.innerHTML  = '3日分以上の記録が溜まると<br>自動予測できます';
           untilEl.textContent = '';
           return;
         }
 
-        const avg = type === 'nursing' ? calcAvgNursingInterval() : calcAvgAwakeTime();
+        const avg = calcAvgAwakeTime();
         if (!avg) {
           timeEl.className = 'pred-nodata';
           timeEl.innerHTML = 'もう少し記録を続けると<br>予測できます';
@@ -1856,10 +1910,7 @@
           return;
         }
 
-        const lastLog = type === 'nursing'
-          ? logs.find(l => l.type === 'nursing')
-          : logs.find(l => l.type === 'sleep' && l.subtype === 'end');
-
+        const lastLog = logs.find(l => l.type === 'sleep' && l.subtype === 'end');
         if (!lastLog) {
           timeEl.className  = 'pred-time';
           timeEl.textContent = '--:--';
@@ -1884,8 +1935,7 @@
         }
       }
 
-      updateCard('nursing', 'predNursingTime', 'predNursingUntil');
-      updateCard('sleep',   'predSleepTime',   'predSleepUntil');
+      updateSleepCard();
     }
 
     async function loadNotifSettings() {
@@ -2733,6 +2783,7 @@
       // ミルク目標
       document.getElementById('milkGoalInput').value         = milkDailyGoal || 700;
       document.getElementById('milkAutoWeightInput').value   = babyProfile.weight != null ? babyProfile.weight : '';
+      document.getElementById('milkNextIntervalInput').value = milkNextIntervalH || 3;
       document.getElementById('nursingMlInput').value        = nursingMlPerSession || 100;
       updateMilkGoalModeUI();
       // 家族コード
@@ -3215,6 +3266,7 @@
       await loadNotifSettings();
       await loadBabyProfile();
       await loadMilkGoal();
+      await loadMilkNextInterval();
       await loadNursingMlPerSession();
 
       updateHeaderName();
