@@ -2308,7 +2308,7 @@
           latestW ? `<div class="growth-latest-badge"><div class="growth-latest-val">${latestW.weight} kg</div><div class="growth-latest-label">⚖️ 最新体重</div></div>` : '',
           latestH ? `<div class="growth-latest-badge"><div class="growth-latest-val">${latestH.height} cm</div><div class="growth-latest-label">📏 最新身長</div></div>` : ''
         ].join('');
-      }
+
         requestAnimationFrame(() => {
           if (hasWeight) {
             const wLogs  = growthLogs.filter(g => g.weight != null);
