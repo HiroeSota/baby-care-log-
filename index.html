@@ -594,6 +594,7 @@
     .data-card-value { font-size: 1.6rem; font-weight: bold; color: var(--label-txt); line-height: 1.1; }
     .data-card-unit { font-size: 0.68rem; color: var(--sub-txt); margin-bottom: 2px; }
     .data-card-name { font-size: 0.7rem; color: var(--sub-txt); }
+    .data-card-sub  { font-size: 0.65rem; color: var(--sub-txt); margin-top: 4px; line-height: 1.5; }
     .chart-section {
       background: var(--bg-card); border-radius: 16px; padding: 14px;
       margin-bottom: 16px; box-shadow: 0 2px 8px rgba(200,140,160,0.10);
@@ -604,6 +605,10 @@
 
     /* ── Growth Section ── */
     .growth-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .growth-latest { display: flex; gap: 10px; margin-bottom: 14px; }
+    .growth-latest-badge { flex: 1; background: var(--bg-stats); border-radius: 14px; padding: 10px 12px; text-align: center; transition: background 0.3s; }
+    .growth-latest-val { font-size: 1.2rem; font-weight: bold; color: var(--label-txt); }
+    .growth-latest-label { font-size: 0.68rem; color: var(--sub-txt); margin-top: 3px; }
     .btn-growth-add {
       font-size: 0.78rem; font-weight: 600;
       background: var(--option-sel); border: 1.5px solid var(--option-sel-border);
@@ -869,6 +874,7 @@
           <div class="data-card-value" id="dataTotalDiaper">—</div>
           <div class="data-card-unit">回</div>
           <div class="data-card-name">おむつ合計</div>
+          <div class="data-card-sub" id="dataDiaperSub"></div>
         </div>
       </div>
 
@@ -895,6 +901,7 @@
           ＋ 記録するをタップして<br>体重・身長を記録しましょう
         </div>
         <div id="growthCharts" style="display:none">
+          <div class="growth-latest" id="growthLatest"></div>
           <div class="chart-sub-label">体重 (kg)</div>
           <canvas id="chartWeight" class="chart-canvas"></canvas>
           <div class="chart-sub-label" style="margin-top:14px">身長 (cm)</div>
@@ -1405,6 +1412,7 @@
     let milkDailyGoal       = 700;
     let milkGoalMode        = 'manual'; // 'auto' | 'manual'
     let milkNextIntervalH   = 3; // 次のミルクまでの間隔（時間）
+    let predictionTimer     = null;
     let babyProfile         = { birthdate: '', weight: null, height: null, updatedAt: null };
     let nursingMlPerSession = 100;
     let growthLogs          = [];
@@ -2294,6 +2302,13 @@
       document.getElementById('growthCharts').style.display = hasAny ? 'block' : 'none';
 
       if (hasAny) {
+        const latestW = [...growthLogs].reverse().find(g => g.weight != null);
+        const latestH = [...growthLogs].reverse().find(g => g.height != null);
+        document.getElementById('growthLatest').innerHTML = [
+          latestW ? `<div class="growth-latest-badge"><div class="growth-latest-val">${latestW.weight} kg</div><div class="growth-latest-label">⚖️ 最新体重</div></div>` : '',
+          latestH ? `<div class="growth-latest-badge"><div class="growth-latest-val">${latestH.height} cm</div><div class="growth-latest-label">📏 最新身長</div></div>` : ''
+        ].join('');
+      }
         requestAnimationFrame(() => {
           if (hasWeight) {
             const wLogs  = growthLogs.filter(g => g.weight != null);
@@ -2484,6 +2499,7 @@
       const nursingArr  = days.map(() => 0);
       const diaperArr   = days.map(() => 0);
       const sleepMinArr = days.map(() => 0);
+      let totalPee = 0, totalPoop = 0;
 
       for (const log of logs) {
         const ld = new Date(log.timestamp);
@@ -2494,7 +2510,11 @@
         );
         if (idx === -1) continue;
         if (log.type === 'nursing') nursingArr[idx]++;
-        if (log.type === 'diaper')  diaperArr[idx]++;
+        if (log.type === 'diaper') {
+          diaperArr[idx]++;
+          if (log.subtype === 'pee')  totalPee++;
+          if (log.subtype === 'poop') totalPoop++;
+        }
         if (log.type === 'sleep' && log.subtype === 'end' && log.duration)
           sleepMinArr[idx] += log.duration;
       }
@@ -2507,6 +2527,8 @@
       document.getElementById('dataTotalNursing').textContent = totalNursing;
       document.getElementById('dataAvgSleep').textContent     = avgSleepH.toFixed(1);
       document.getElementById('dataTotalDiaper').textContent  = totalDiaper;
+      document.getElementById('dataDiaperSub').textContent    =
+        totalDiaper > 0 ? `💧おしっこ ${totalPee}回　💩うんち ${totalPoop}回` : '';
 
       const labels = days.map(d => `${d.getMonth()+1}/${d.getDate()}`);
       const sleepH = sleepMinArr.map(m => parseFloat((m / 60).toFixed(1)));
@@ -3177,6 +3199,7 @@
     function handleSignOut() {
       wasLoggedIn = false;
       if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
+      clearInterval(predictionTimer); predictionTimer = null;
       logs = []; growthLogs = []; activeSleep = null; babyName = ''; familyId = null;
       closeAccountModal();
       firebase.auth().signOut();
@@ -3301,6 +3324,8 @@
       updateHeaderName();
       updateSleepButton();
       if (activeSleep) sleepTimer = setInterval(updateSleepButton, 30000);
+      clearInterval(predictionTimer);
+      predictionTimer = setInterval(renderPredictionCards, 60000);
 
       // Real-time listener
       if (unsubscribeListener) unsubscribeListener();
